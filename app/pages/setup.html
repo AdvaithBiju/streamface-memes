@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StreamFace Setup</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>StreamFace <span class="accent">Memes</span></h1>
+    <p class="muted">Streamer setup. Only your own face is used, and you control it.</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>1. Add your face <span class="muted small">(up to {{ max_faces }})</span></h2>
+      <div class="row">
+        <div class="panel">
+          <h3>Upload photos</h3>
+          <form id="upload-form">
+            <input type="file" id="file-input" name="photos" accept="image/*" multiple>
+            <button type="submit">Upload</button>
+          </form>
+          <p class="muted small">A clear, front-facing, well-lit photo works best.</p>
+        </div>
+        <div class="panel">
+          <h3>Webcam snapshot</h3>
+          <video id="video" autoplay playsinline muted hidden></video>
+          <canvas id="canvas" hidden></canvas>
+          <div class="buttons">
+            <button id="cam-start" type="button">Start camera</button>
+            <button id="cam-snap" type="button" disabled>Snap</button>
+            <button id="cam-stop" type="button" class="ghost" disabled>Stop</button>
+          </div>
+        </div>
+      </div>
+      <p id="status" class="status" role="status"></p>
+    </section>
+
+    <section class="card">
+      <h2>2. Your cutouts</h2>
+      <div id="faces" class="faces"></div>
+      <p id="empty" class="muted">No faces yet. Upload a photo or take a snapshot.</p>
+    </section>
+  </main>
+
+  <footer class="muted small">Face detector: {{ backend }}</footer>
+
+  <script>window.MAX_FACES = {{ max_faces }};</script>
+  <script src="{{ url_for('static', filename='js/setup.js') }}"></script>
+</body>
+</html>

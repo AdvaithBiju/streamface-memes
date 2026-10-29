@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+
+# Streamer's face photos and runtime data stay local
+data/
+generated/*
+!generated/.gitkeep
+models/
