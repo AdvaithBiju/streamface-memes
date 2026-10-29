@@ -8,7 +8,7 @@ A Twitch tool that lets viewers trigger memes made with the streamer's own face.
 - Every meme goes through mod approval before it appears on stream.
 - Viewers can add only a short caption, and it has to pass a profanity and length filter.
 
-> Built for the Codex x TwitchCon Hackathon. **Status: Phase 1 of 5** (face setup). The full setup, Twitch and OBS guide comes in Phase 5.
+> Built for the Codex x TwitchCon Hackathon. **Status: Phase 2 of 5** (face setup + meme editor). The full setup, Twitch and OBS guide comes in Phase 5.
 
 ## Quick start (Windows)
 
@@ -22,9 +22,31 @@ copy .env.example .env
 python run.py
 ```
 
-Open http://127.0.0.1:5000/setup.
+Open http://127.0.0.1:5000/setup to add your face, then http://127.0.0.1:5000/editor to make memes.
 
 On first run the app downloads MediaPipe's small face-detection model (about 230 KB) to `models/`. If MediaPipe isn't available, it falls back to OpenCV's built-in Haar cascade automatically.
+
+## Meme editor (`/editor`)
+
+1. **Pick a meme**
+   - **Templates:** the 5 built-in templates, plus any you uploaded or saved.
+   - **Popular:** the top 100 meme templates from [Imgflip's public API](https://imgflip.com/api), the same source many GitHub meme generators use. Click one to import it.
+   - **Upload:** use any meme image of your own.
+2. **Add layers:** click your face to drop it onto the meme, and use **+ Add text** for captions.
+3. **Adjust:**
+   - Drag a face or caption to move it.
+   - Drag the corner handle to resize. Faces keep their shape unless you untick *Lock aspect ratio*.
+   - Drag the top handle to rotate. Hold Shift to snap to 15°.
+   - Arrow keys nudge the selected item.
+   - You can also flip a face, change its colour match, and set the text colours, outline and ALL CAPS.
+4. **Export:**
+   - Pick an output width to resize the whole meme.
+   - **Generate meme** saves a PNG to `generated/`.
+   - **Save as template** stores where your faces and captions sit, so chat can use that layout later with `!meme <name>`.
+
+Text auto-shrinks to fit its box, in the classic white Impact style with a black outline. The server-side renderer (`app/meme.py`) uses the same layout rules as the browser preview, so the PNG looks the same as the editor.
+
+To redraw the built-in placeholder templates, run `python scripts/make_placeholder_templates.py`.
 
 ## Project layout
 
@@ -34,11 +56,17 @@ app/
   config.py        settings + .env loading
   db.py            SQLite (data/streamface.db)
   face.py          face detection + oval cutout
+  meme.py          meme renderer (faces + captions -> PNG)
+  memetemplates.py template registry (built-in + your own)
+  imgflip.py       popular templates from Imgflip
   routes/setup.py  /setup page + /api/faces
+  routes/editor.py /editor page, templates, render API
   pages/           HTML pages (Flask templates)
   static/          CSS / JS
-templates/         meme template images + templates.json (Phase 2)
-generated/         finished memes (Phase 2)
+templates/         built-in meme templates + templates.json
+templates/user/    your uploaded/imported/saved templates (git-ignored)
+generated/         finished memes (git-ignored)
+scripts/           helper scripts
 data/              face cutouts + DB (git-ignored, stays on your machine)
 run.py
 ```
@@ -46,7 +74,7 @@ run.py
 ## Roadmap
 
 - [x] Phase 1: project structure, face upload or webcam snapshot, cutout on `/setup`
-- [ ] Phase 2: `templates.json` and meme generator
+- [x] Phase 2: `templates.json`, meme generator, and the drag-and-drop editor with uploads and popular templates
 - [ ] Phase 3: mod dashboard and OBS overlay with Socket.IO, plus demo mode
 - [ ] Phase 4: Twitch `!meme` chat command and EventSub channel point redemptions
 - [ ] Phase 5: polish, animations, full docs, Meme of the Stream voting

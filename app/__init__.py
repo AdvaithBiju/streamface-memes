@@ -5,6 +5,7 @@ from flask import Flask, redirect, url_for
 from .config import Config
 from .db import close_db, init_db
 from .face import FaceDetector
+from .memetemplates import TemplateStore
 
 
 def create_app(config_class=Config) -> Flask:
@@ -22,8 +23,12 @@ def create_app(config_class=Config) -> Flask:
     app.extensions["face_detector"] = FaceDetector(app.config["MODEL_PATH"])
     app.logger.info("Face detector backend: %s", app.extensions["face_detector"].backend)
 
+    app.extensions["template_store"] = TemplateStore(app.config["TEMPLATES_DIR"])
+
+    from .routes.editor import bp as editor_bp
     from .routes.setup import bp as setup_bp
     app.register_blueprint(setup_bp)
+    app.register_blueprint(editor_bp)
 
     @app.get("/")
     def index():

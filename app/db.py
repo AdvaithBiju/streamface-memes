@@ -10,6 +10,16 @@ CREATE TABLE IF NOT EXISTS faces (
     source      TEXT NOT NULL,          -- 'upload' or 'webcam'
     created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS memes (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    filename      TEXT NOT NULL UNIQUE,
+    template_id   TEXT NOT NULL,
+    requested_by  TEXT NOT NULL,         -- 'streamer' for editor-made memes
+    caption       TEXT NOT NULL DEFAULT '',
+    status        TEXT NOT NULL,         -- 'created' now; 'pending'/'approved'/... from Phase 3
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
 """
 
 

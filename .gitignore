@@ -8,3 +8,6 @@ data/
 generated/*
 !generated/.gitkeep
 models/
+
+# Templates you upload/import may be copyrighted; keep them local
+templates/user/

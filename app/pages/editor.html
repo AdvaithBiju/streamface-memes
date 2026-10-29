@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StreamFace Editor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="wide">
+  <header>
+    <h1>StreamFace <span class="accent">Memes</span></h1>
+    <nav><a href="/setup">Face setup</a><a href="/editor" class="active">Meme editor</a></nav>
+  </header>
+
+  <main class="editor">
+    <!-- Left: pick a meme -->
+    <aside class="card side">
+      <h2>1. Pick a meme</h2>
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab active" data-tab="mine">Templates</button>
+        <button type="button" class="tab" data-tab="popular">Popular</button>
+        <button type="button" class="tab" data-tab="upload">Upload</button>
+      </div>
+
+      <div class="tab-panel" id="tab-mine">
+        <div id="template-grid" class="thumbs"></div>
+      </div>
+
+      <div class="tab-panel" id="tab-popular" hidden>
+        <input type="search" id="popular-search" placeholder="Search popular memes…">
+        <p class="muted small">Top 100 meme templates from Imgflip. Click one to import it.</p>
+        <div id="popular-grid" class="thumbs"></div>
+      </div>
+
+      <div class="tab-panel" id="tab-upload" hidden>
+        <form id="template-upload">
+          <input type="file" name="image" accept="image/*" required>
+          <input type="text" name="name" placeholder="Name (optional)" maxlength="60">
+          <button type="submit">Upload meme</button>
+        </form>
+        <p class="muted small">Use any meme image. It's saved to your templates on this computer.</p>
+      </div>
+
+      <h2>2. Add layers</h2>
+      <div id="face-strip" class="face-strip"></div>
+      <p id="no-faces" class="muted small" hidden>No faces yet. <a href="/setup">Add one on the setup page</a>.</p>
+      <button type="button" id="add-text">+ Add text</button>
+    </aside>
+
+    <!-- Middle: the canvas -->
+    <section class="card stage-wrap">
+      <div id="stage-box" class="stage-box">
+        <canvas id="stage"></canvas>
+        <p id="stage-empty" class="muted">Pick a meme template on the left to start.</p>
+      </div>
+      <p class="muted small hint">Drag to move · corner handle to resize · top handle to rotate (hold Shift to snap) · arrow keys nudge · Delete removes</p>
+    </section>
+
+    <!-- Right: layer settings + export -->
+    <aside class="card side">
+      <h2>3. Adjust</h2>
+      <p id="no-selection" class="muted small">Click a face or text on the meme to edit it.</p>
+
+      <div id="face-panel" class="props" hidden>
+        <label>Face <select id="face-select"></select></label>
+        <div class="two">
+          <label>Width <input type="number" data-prop="width" min="4"></label>
+          <label>Height <input type="number" data-prop="height" min="4"></label>
+        </div>
+        <label>Rotation <input type="range" data-prop="rotation" min="-180" max="180"></label>
+        <label class="check"><input type="checkbox" id="lock-aspect" checked> Lock aspect ratio</label>
+        <label class="check"><input type="checkbox" data-prop="flip"> Flip horizontally</label>
+        <label class="check"><input type="checkbox" data-prop="color_match"> Colour match to meme <span class="muted small">(on export)</span></label>
+      </div>
+
+      <div id="text-panel" class="props" hidden>
+        <label>Text <textarea data-prop="text" rows="3" maxlength="200"></textarea></label>
+        <div class="two">
+          <label>Max size <input type="number" data-prop="size" min="10" max="400"></label>
+          <label>Outline <input type="number" data-prop="outline" min="0" max="30"></label>
+        </div>
+        <div class="two">
+          <label>Fill <input type="color" data-prop="color"></label>
+          <label>Outline colour <input type="color" data-prop="stroke"></label>
+        </div>
+        <label>Rotation <input type="range" data-prop="rotation" min="-180" max="180"></label>
+        <label class="check"><input type="checkbox" data-prop="uppercase"> ALL CAPS</label>
+      </div>
+
+      <div id="layer-actions" class="buttons" hidden>
+        <button type="button" class="ghost" id="layer-up" title="Bring forward">Forward</button>
+        <button type="button" class="ghost" id="layer-down" title="Send backward">Back</button>
+        <button type="button" class="ghost" id="layer-dup">Duplicate</button>
+        <button type="button" class="ghost danger" id="layer-del">Delete</button>
+      </div>
+
+      <h2>4. Export</h2>
+      <label>Output width (px) <input type="number" id="out-width" min="200" max="2000" step="10"></label>
+      <p class="muted small" id="out-size"></p>
+      <div class="buttons">
+        <button type="button" id="generate">Generate meme</button>
+        <button type="button" class="ghost" id="save-template">Save as template</button>
+        <button type="button" class="ghost" id="reset-layout">Reset</button>
+      </div>
+      <p id="status" class="status" role="status"></p>
+      <div id="result" class="result" hidden>
+        <img id="result-img" alt="Generated meme">
+        <a id="result-download" download>Download PNG</a>
+      </div>
+    </aside>
+  </main>
+
+  <section class="card recent">
+    <h2>Recent memes</h2>
+    <div id="recent" class="thumbs recent-grid"></div>
+  </section>
+
+  <script src="{{ url_for('static', filename='js/editor.js') }}"></script>
+</body>
+</html>

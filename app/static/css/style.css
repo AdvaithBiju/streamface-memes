@@ -84,3 +84,138 @@ video { width: 100%; border-radius: 8px; background: #000; }
 .checker img { max-width: 100%; max-height: 100%; }
 
 footer { margin-top: 24px; }
+
+/* ---------- nav ---------- */
+nav { display: flex; gap: 6px; margin: 10px 0 6px; flex-wrap: wrap; }
+nav a {
+  color: var(--muted);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: var(--card);
+}
+nav a.active, nav a:hover { color: var(--text); background: var(--accent); }
+a { color: var(--accent); }
+
+/* ---------- editor ---------- */
+body.wide header, body.wide main, body.wide .recent { max-width: 1500px; margin-left: auto; margin-right: auto; }
+
+.editor {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr) 290px;
+  gap: 16px;
+  align-items: start;
+}
+.editor .card { margin: 16px 0 0; }
+.side h2 { font-size: 1.05rem; margin: 18px 0 10px; }
+.side h2:first-child { margin-top: 0; }
+
+.tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+.tab { flex: 1; background: var(--panel); color: var(--muted); padding: 7px 4px; font-size: 0.85rem; }
+.tab.active { background: var(--accent); color: #fff; }
+
+.side input[type="text"], .side input[type="search"], .side input[type="number"],
+.side select, .side textarea {
+  width: 100%;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid #3a3a3d;
+  border-radius: 6px;
+  padding: 7px 8px;
+  font: inherit;
+  margin: 4px 0 8px;
+}
+.side textarea { resize: vertical; }
+.side input[type="color"] { width: 100%; height: 34px; background: none; border: 0; padding: 0; margin: 4px 0 8px; }
+.side input[type="range"] { width: 100%; margin: 6px 0 10px; }
+.side label { display: block; font-size: 0.85rem; color: var(--muted); }
+.side label.check { display: flex; gap: 8px; align-items: center; margin: 6px 0; color: var(--text); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+  gap: 8px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.thumb {
+  position: relative;
+  background: var(--panel);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+.thumb:hover { border-color: #555; }
+.thumb.active { border-color: var(--accent); }
+.thumb img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.thumb span {
+  font-size: 0.7rem;
+  padding: 3px 4px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.thumb-del {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  padding: 0 7px;
+  line-height: 1.4;
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--error);
+}
+
+.face-strip { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.face-btn {
+  background: var(--panel);
+  border: 1px solid #3a3a3d;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 78px;
+}
+.face-btn img { width: 60px; height: 70px; object-fit: contain; }
+.face-btn span { font-size: 0.75rem; }
+
+.stage-wrap { position: sticky; top: 16px; }
+.stage-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+  background: #0b0b0d;
+  border-radius: 8px;
+  padding: 12px;
+}
+#stage {
+  max-width: 100%;
+  max-height: 75vh;
+  touch-action: none;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+}
+.hint { text-align: center; margin: 10px 0 0; }
+
+.result { margin-top: 12px; }
+.result img { width: 100%; border-radius: 8px; display: block; margin-bottom: 6px; }
+
+.recent { margin-top: 16px; }
+.recent-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); max-height: none; }
+
+@media (max-width: 1100px) {
+  .editor { grid-template-columns: 1fr 1fr; }
+  .stage-wrap { grid-column: 1 / -1; grid-row: 1; position: static; }
+}
+@media (max-width: 700px) {
+  .editor { grid-template-columns: 1fr; }
+  .stage-box { min-height: 240px; padding: 6px; }
+}
+
+[hidden] { display: none !important; }
