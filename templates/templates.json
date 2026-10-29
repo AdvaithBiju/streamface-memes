@@ -2,45 +2,48 @@
   "templates": [
     {
       "id": "drake",
-      "name": "Nope / Yep",
-      "file": "drake.png",
-      "width": 800,
-      "height": 800,
+      "name": "Drake Hotline Bling",
+      "file": "drake.jpg",
+      "image_url": "https://i.imgflip.com/30b1gx.jpg",
+      "width": 1200,
+      "height": 1200,
       "face_slots": [
         {
-          "x": 110,
-          "y": 50,
-          "width": 180,
-          "height": 220,
+          "x": 25,
+          "y": 10,
+          "width": 230,
+          "height": 295,
           "rotation": 0
         },
         {
-          "x": 110,
-          "y": 450,
-          "width": 180,
-          "height": 220,
+          "x": 280,
+          "y": 600,
+          "width": 190,
+          "height": 245,
           "rotation": 0
         }
       ],
       "captions": [
         {
-          "x": 420,
-          "y": 30,
-          "width": 360,
-          "height": 340,
-          "size": 56,
-          "default": "HOMEWORK",
+          "x": 625,
+          "y": 25,
+          "width": 550,
+          "height": 550,
+          "rotation": 0,
+          "size": 80,
+          "default": "homework",
           "color": "#111111",
           "stroke": "#ffffff",
           "outline": 0
         },
         {
-          "x": 420,
-          "y": 430,
-          "width": 360,
-          "height": 340,
-          "size": 56,
-          "default": "GAMING",
+          "x": 625,
+          "y": 625,
+          "width": 550,
+          "height": 550,
+          "rotation": 0,
+          "size": 80,
+          "default": "gaming",
           "color": "#111111",
           "stroke": "#ffffff",
           "outline": 0
@@ -50,79 +53,84 @@
     {
       "id": "brain",
       "name": "Expanding Brain",
-      "file": "brain.png",
-      "width": 800,
-      "height": 1000,
+      "file": "brain.jpg",
+      "image_url": "https://i.imgflip.com/1jwhww.jpg",
+      "width": 857,
+      "height": 1202,
       "face_slots": [
         {
-          "x": 532,
-          "y": 15,
-          "width": 136,
-          "height": 165,
+          "x": 470,
+          "y": 40,
+          "width": 200,
+          "height": 250,
           "rotation": 0
         },
         {
-          "x": 532,
-          "y": 265,
-          "width": 136,
-          "height": 165,
+          "x": 640,
+          "y": 320,
+          "width": 200,
+          "height": 260,
           "rotation": 0
         },
         {
-          "x": 532,
-          "y": 515,
-          "width": 136,
-          "height": 165,
+          "x": 650,
+          "y": 620,
+          "width": 190,
+          "height": 250,
           "rotation": 0
         },
         {
-          "x": 532,
-          "y": 765,
-          "width": 136,
-          "height": 165,
+          "x": 495,
+          "y": 920,
+          "width": 210,
+          "height": 270,
           "rotation": 0
         }
       ],
       "captions": [
         {
-          "x": 20,
-          "y": 20,
-          "width": 360,
-          "height": 210,
-          "size": 44,
+          "x": 15,
+          "y": 15,
+          "width": 390,
+          "height": 270,
+          "rotation": 0,
+          "size": 52,
           "default": "using a meme",
           "color": "#111111",
           "stroke": "#ffffff",
           "outline": 0
         },
         {
-          "x": 20,
-          "y": 270,
-          "width": 360,
-          "height": 210,
-          "size": 44,
+          "x": 15,
+          "y": 315,
+          "width": 390,
+          "height": 270,
+          "rotation": 0,
+          "size": 52,
           "default": "using your own face",
           "color": "#111111",
           "stroke": "#ffffff",
           "outline": 0
         },
         {
-          "x": 20,
-          "y": 520,
-          "width": 360,
-          "height": 210,
-          "size": 44,
+          "x": 15,
+          "y": 615,
+          "width": 390,
+          "height": 260,
+          "rotation": 0,
+          "size": 52,
           "default": "putting it on stream",
           "color": "#111111",
           "stroke": "#ffffff",
           "outline": 0
         },
         {
-          "x": 20,
-          "y": 770,
-          "width": 360,
-          "height": 210,
-          "size": 44,
+          "x": 15,
+          "y": 905,
+          "width": 390,
+          "height": 280,
+          "rotation": 0,
+          "size": 52,
           "default": "chat makes them for you",
           "color": "#111111",
           "stroke": "#ffffff",
@@ -133,52 +141,63 @@
     {
       "id": "fine",
       "name": "This Is Fine",
-      "file": "fine.png",
-      "width": 900,
-      "height": 520,
+      "file": "fine.jpg",
+      "image_url": "https://i.imgflip.com/wxica.jpg",
+      "width": 580,
+      "height": 282,
       "face_slots": [
         {
-          "x": 360,
-          "y": 110,
-          "width": 170,
-          "height": 210,
+          "x": 95,
+          "y": 70,
+          "width": 90,
+          "height": 115,
+          "rotation": 0
+        },
+        {
+          "x": 355,
+          "y": 75,
+          "width": 160,
+          "height": 190,
           "rotation": 0
         }
       ],
       "captions": [
         {
-          "x": 40,
-          "y": 15,
-          "width": 820,
-          "height": 90,
-          "size": 64,
-          "default": "THIS IS FINE"
+          "x": 15,
+          "y": 8,
+          "width": 270,
+          "height": 60,
+          "rotation": 0,
+          "size": 30,
+          "default": "chat during my ranked game"
         }
       ]
     },
     {
       "id": "changemymind",
       "name": "Change My Mind",
-      "file": "changemymind.png",
-      "width": 900,
-      "height": 560,
+      "file": "changemymind.jpg",
+      "image_url": "https://i.imgflip.com/24y43o.jpg",
+      "width": 482,
+      "height": 361,
       "face_slots": [
         {
-          "x": 130,
-          "y": 80,
-          "width": 170,
-          "height": 210,
+          "x": 165,
+          "y": 25,
+          "width": 78,
+          "height": 100,
           "rotation": 0
         }
       ],
       "captions": [
         {
-          "x": 465,
-          "y": 190,
-          "width": 320,
-          "height": 160,
-          "size": 40,
-          "default": "chat is always right. change my mind",
+          "x": 215,
+          "y": 205,
+          "width": 200,
+          "height": 95,
+          "rotation": 0,
+          "size": 30,
+          "default": "chat is always right",
           "color": "#111111",
           "stroke": "#ffffff",
           "outline": 0
@@ -187,57 +206,180 @@
     },
     {
       "id": "distracted",
-      "name": "Distracted",
-      "file": "distracted.png",
-      "width": 900,
-      "height": 560,
+      "name": "Distracted Boyfriend",
+      "file": "distracted.jpg",
+      "image_url": "https://i.imgflip.com/1ur9b0.jpg",
+      "width": 1200,
+      "height": 800,
       "face_slots": [
         {
-          "x": 70,
-          "y": 90,
-          "width": 170,
-          "height": 210,
-          "rotation": 0
-        },
-        {
-          "x": 370,
-          "y": 90,
-          "width": 170,
-          "height": 210,
-          "rotation": 0
-        },
-        {
-          "x": 660,
-          "y": 90,
-          "width": 170,
-          "height": 210,
+          "x": 570,
+          "y": 85,
+          "width": 180,
+          "height": 230,
           "rotation": 0
         }
       ],
       "captions": [
         {
-          "x": 40,
-          "y": 330,
-          "width": 230,
-          "height": 110,
-          "size": 40,
-          "default": "NEW GAME"
+          "x": 170,
+          "y": 470,
+          "width": 360,
+          "height": 130,
+          "rotation": 0,
+          "size": 64,
+          "default": "new game"
         },
         {
-          "x": 340,
-          "y": 330,
-          "width": 230,
-          "height": 110,
-          "size": 40,
-          "default": "ME"
+          "x": 590,
+          "y": 400,
+          "width": 290,
+          "height": 120,
+          "rotation": 0,
+          "size": 64,
+          "default": "me"
         },
         {
-          "x": 630,
-          "y": 330,
-          "width": 230,
+          "x": 900,
+          "y": 440,
+          "width": 270,
+          "height": 130,
+          "rotation": 0,
+          "size": 56,
+          "default": "my backlog"
+        }
+      ]
+    },
+    {
+      "id": "twobuttons",
+      "name": "Two Buttons",
+      "file": "twobuttons.jpg",
+      "image_url": "https://i.imgflip.com/1g8my4.jpg",
+      "width": 600,
+      "height": 908,
+      "face_slots": [
+        {
+          "x": 240,
+          "y": 460,
+          "width": 210,
+          "height": 280,
+          "rotation": 0
+        }
+      ],
+      "captions": [
+        {
+          "x": 45,
+          "y": 95,
+          "width": 220,
+          "height": 85,
+          "rotation": -15,
+          "size": 30,
+          "default": "stay on stream",
+          "color": "#111111",
+          "stroke": "#ffffff",
+          "outline": 0
+        },
+        {
+          "x": 268,
+          "y": 60,
+          "width": 190,
+          "height": 85,
+          "rotation": -15,
+          "size": 30,
+          "default": "touch grass",
+          "color": "#111111",
+          "stroke": "#ffffff",
+          "outline": 0
+        },
+        {
+          "x": 20,
+          "y": 770,
+          "width": 560,
           "height": 110,
-          "size": 40,
-          "default": "MY BACKLOG"
+          "rotation": 0,
+          "size": 56,
+          "default": "me at 4am"
+        }
+      ]
+    },
+    {
+      "id": "harold",
+      "name": "Hide the Pain Harold",
+      "file": "harold.jpg",
+      "image_url": "https://i.imgflip.com/gk5el.jpg",
+      "width": 480,
+      "height": 601,
+      "face_slots": [
+        {
+          "x": 280,
+          "y": 0,
+          "width": 100,
+          "height": 130,
+          "rotation": 0
+        },
+        {
+          "x": 280,
+          "y": 300,
+          "width": 100,
+          "height": 130,
+          "rotation": 0
+        }
+      ],
+      "captions": [
+        {
+          "x": 10,
+          "y": 215,
+          "width": 460,
+          "height": 80,
+          "rotation": 0,
+          "size": 38,
+          "default": "chat says gg"
+        },
+        {
+          "x": 10,
+          "y": 515,
+          "width": 460,
+          "height": 80,
+          "rotation": 0,
+          "size": 38,
+          "default": "after i lost 10 in a row"
+        }
+      ]
+    },
+    {
+      "id": "rollsafe",
+      "name": "Roll Safe",
+      "file": "rollsafe.jpg",
+      "image_url": "https://i.imgflip.com/1h7in3.jpg",
+      "width": 702,
+      "height": 395,
+      "face_slots": [
+        {
+          "x": 90,
+          "y": 25,
+          "width": 215,
+          "height": 275,
+          "rotation": 0
+        }
+      ],
+      "captions": [
+        {
+          "x": 20,
+          "y": 5,
+          "width": 660,
+          "height": 95,
+          "rotation": 0,
+          "size": 48,
+          "default": "can't lose the game"
+        },
+        {
+          "x": 20,
+          "y": 295,
+          "width": 660,
+          "height": 95,
+          "rotation": 0,
+          "size": 48,
+          "default": "if you never play"
         }
       ]
     }

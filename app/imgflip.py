@@ -54,7 +54,12 @@ def download(meme_id: str) -> tuple[dict, io.BytesIO]:
     meme = next((m for m in popular() if m["id"] == meme_id), None)
     if meme is None:
         raise ValueError("Unknown Imgflip template.")
-    host = urlparse(meme["url"]).hostname or ""
+    return meme, download_url(meme["url"])
+
+
+def download_url(url: str) -> io.BytesIO:
+    """Download an Imgflip image. Only imgflip.com hosts are allowed."""
+    host = urlparse(url).hostname or ""
     if not (host == "imgflip.com" or host.endswith(".imgflip.com")):
         raise ValueError("Unexpected image host.")
-    return meme, io.BytesIO(_get(meme["url"], MAX_DOWNLOAD))
+    return io.BytesIO(_get(url, MAX_DOWNLOAD))

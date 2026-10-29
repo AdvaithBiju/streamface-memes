@@ -24,12 +24,12 @@ python run.py
 
 Open http://127.0.0.1:5000/setup to add your face, then http://127.0.0.1:5000/editor to make memes.
 
-On first run the app downloads MediaPipe's small face-detection model (about 230 KB) to `models/`. If MediaPipe isn't available, it falls back to OpenCV's built-in Haar cascade automatically.
+On first run the app downloads MediaPipe's small face-detection model (about 230 KB) to `models/` and the built-in meme images to `templates/originals/`. If MediaPipe isn't available, it falls back to OpenCV's built-in Haar cascade automatically.
 
 ## Meme editor (`/editor`)
 
 1. **Pick a meme**
-   - **Templates:** the 5 built-in templates, plus any you uploaded or saved.
+   - **Templates:** 8 classic memes (Drake, Expanding Brain, This Is Fine, Change My Mind, Distracted Boyfriend, Two Buttons, Hide the Pain Harold, Roll Safe), plus any you uploaded or saved. Their face slots and caption boxes are already lined up with the real faces, so your face lands in the right place.
    - **Popular:** the top 100 meme templates from [Imgflip's public API](https://imgflip.com/api), the same source many GitHub meme generators use. Click one to import it.
    - **Upload:** use any meme image of your own.
 2. **Add layers:** click your face to drop it onto the meme, and use **+ Add text** for captions.
@@ -46,7 +46,7 @@ On first run the app downloads MediaPipe's small face-detection model (about 230
 
 Text auto-shrinks to fit its box, in the classic white Impact style with a black outline. The server-side renderer (`app/meme.py`) uses the same layout rules as the browser preview, so the PNG looks the same as the editor.
 
-To redraw the built-in placeholder templates, run `python scripts/make_placeholder_templates.py`.
+The meme images themselves are copyrighted, so they aren't in this repo. `templates/templates.json` holds the image URL and the face and caption positions. The app downloads the originals from Imgflip into `templates/originals/` the first time it starts, and that folder is git-ignored. If a download fails (for example when you're offline), that template stays hidden until the next start.
 
 ## Project layout
 
@@ -63,10 +63,10 @@ app/
   routes/editor.py /editor page, templates, render API
   pages/           HTML pages (Flask templates)
   static/          CSS / JS
-templates/         built-in meme templates + templates.json
+templates/         templates.json (built-in template layouts)
+templates/originals/  downloaded original meme images (git-ignored)
 templates/user/    your uploaded/imported/saved templates (git-ignored)
 generated/         finished memes (git-ignored)
-scripts/           helper scripts
 data/              face cutouts + DB (git-ignored, stays on your machine)
 run.py
 ```

@@ -24,6 +24,7 @@ def create_app(config_class=Config) -> Flask:
     app.logger.info("Face detector backend: %s", app.extensions["face_detector"].backend)
 
     app.extensions["template_store"] = TemplateStore(app.config["TEMPLATES_DIR"])
+    app.extensions["template_store"].download_originals()
 
     from .routes.editor import bp as editor_bp
     from .routes.setup import bp as setup_bp

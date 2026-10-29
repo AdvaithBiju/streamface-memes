@@ -1,12 +1,18 @@
 """Meme template registry.
 
-Built-in templates live in templates/templates.json (committed). Templates the
-streamer uploads, imports from Imgflip or saves from the editor live in
-templates/user/templates.json (git-ignored, since they may be copyrighted).
+Built-in templates are described in templates/templates.json (committed): face
+slots and caption boxes tuned for the original meme images. The images
+themselves are copyrighted, so they aren't in the repo; they're downloaded from
+Imgflip into templates/originals/ on first start.
+
+Templates the streamer uploads, imports from Imgflip or saves from the editor
+live in templates/user/templates.json. Both image folders are git-ignored.
 """
 from __future__ import annotations
 
+import io
 import json
+import logging
 import re
 import shutil
 import threading
@@ -15,6 +21,8 @@ from pathlib import Path
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 MAX_TEMPLATE_SIZE = 1600
+
+log = logging.getLogger(__name__)
 
 _lock = threading.Lock()
 
@@ -44,9 +52,31 @@ def default_captions(width: int, height: int) -> list[dict]:
 class TemplateStore:
     def __init__(self, builtin_dir: Path):
         self.builtin_dir = builtin_dir
+        self.originals_dir = builtin_dir / "originals"
         self.user_dir = builtin_dir / "user"
         self.user_json = self.user_dir / "templates.json"
         self.user_dir.mkdir(parents=True, exist_ok=True)
+        self.originals_dir.mkdir(parents=True, exist_ok=True)
+
+    def download_originals(self) -> None:
+        """Fetch any missing built-in template images from Imgflip."""
+        from . import imgflip
+
+        for t in self._read(self.builtin_dir / "templates.json"):
+            path = self.originals_dir / t["file"]
+            if path.exists():
+                continue
+            try:
+                data = imgflip.download_url(t["image_url"]).getvalue()
+                with Image.open(io.BytesIO(data)) as img:
+                    if img.size != (t["width"], t["height"]):
+                        log.warning("%s is %s, expected %sx%s; face slots may be off",
+                                    t["id"], img.size, t["width"], t["height"])
+                path.write_bytes(data)
+                log.info("Downloaded template image: %s", t["name"])
+            except Exception as exc:
+                log.warning("Couldn't download template %s (%s); it's hidden until it can be fetched",
+                            t["id"], exc)
 
     @staticmethod
     def _read(path: Path) -> list[dict]:
@@ -60,14 +90,15 @@ class TemplateStore:
         tmp.replace(self.user_json)
 
     def all(self) -> list[dict]:
-        builtin = [{**t, "source": "builtin"} for t in self._read(self.builtin_dir / "templates.json")]
+        builtin = [{**t, "source": "builtin"} for t in self._read(self.builtin_dir / "templates.json")
+                   if (self.originals_dir / t["file"]).exists()]
         return builtin + self._read(self.user_json)
 
     def get(self, template_id: str) -> dict | None:
         return next((t for t in self.all() if t["id"] == template_id), None)
 
     def image_path(self, template: dict) -> Path:
-        folder = self.builtin_dir if template["source"] == "builtin" else self.user_dir
+        folder = self.originals_dir if template["source"] == "builtin" else self.user_dir
         return folder / template["file"]
 
     def _unique_id(self, name: str) -> str:
