@@ -4,6 +4,7 @@ from flask import Flask, redirect, url_for
 
 from .config import Config
 from .db import close_db, init_db
+from .extensions import socketio
 from .face import FaceDetector
 from .memetemplates import TemplateStore
 
@@ -26,10 +27,16 @@ def create_app(config_class=Config) -> Flask:
     app.extensions["template_store"] = TemplateStore(app.config["TEMPLATES_DIR"])
     app.extensions["template_store"].download_originals()
 
+    app.extensions["chat_senders"] = []  # Twitch bot registers here in Phase 4
+
     from .routes.editor import bp as editor_bp
     from .routes.setup import bp as setup_bp
+    from .routes.stream import bp as stream_bp
     app.register_blueprint(setup_bp)
     app.register_blueprint(editor_bp)
+    app.register_blueprint(stream_bp)
+
+    socketio.init_app(app)
 
     @app.get("/")
     def index():

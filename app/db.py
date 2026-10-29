@@ -15,12 +15,22 @@ CREATE TABLE IF NOT EXISTS memes (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     filename      TEXT NOT NULL UNIQUE,
     template_id   TEXT NOT NULL,
-    requested_by  TEXT NOT NULL,         -- 'streamer' for editor-made memes
+    requested_by  TEXT NOT NULL,         -- viewer name, or 'streamer' for editor-made memes
     caption       TEXT NOT NULL DEFAULT '',
-    status        TEXT NOT NULL,         -- 'created' now; 'pending'/'approved'/... from Phase 3
+    status        TEXT NOT NULL,         -- created | pending | approved | rejected | shown
     created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 """
+
+# Columns added after the first release; init_db adds any that are missing.
+MIGRATIONS = {
+    "memes": [
+        ("source", "TEXT NOT NULL DEFAULT 'editor'"),   # editor | chat | channel_points | demo
+        ("decided_by", "TEXT"),
+        ("decided_at", "TEXT"),
+        ("shown_at", "TEXT"),
+    ],
+}
 
 
 def get_db() -> sqlite3.Connection:
@@ -40,3 +50,8 @@ def init_db(db_path: Path) -> None:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(db_path) as conn:
         conn.executescript(SCHEMA)
+        for table, columns in MIGRATIONS.items():
+            existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+            for name, decl in columns:
+                if name not in existing:
+                    conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {decl}")

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StreamFace Demo Chat</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="wide">
+  <header>
+    <h1>StreamFace <span class="accent">Memes</span></h1>
+    {% with active = "demo" %}{% include "_nav.html" %}{% endwith %}
+    <p class="muted small">Demo mode: pretend to be Twitch viewers without connecting to Twitch. Open the <a href="/mod" target="_blank">mod queue</a> in another tab to approve memes.</p>
+  </header>
+
+  <main class="demo">
+    <section class="card">
+      <h2>Fake Twitch chat</h2>
+      <div id="chat-log" class="chat-log" aria-live="polite"></div>
+
+      <form id="chat-form" class="chat-form">
+        <div class="chat-user">
+          <input type="text" id="user" maxlength="25" value="cool_viewer" aria-label="Viewer name">
+          <button type="button" class="ghost" id="random-user" title="New random viewer">🎲</button>
+        </div>
+        <input type="text" id="message" maxlength="200" placeholder="!meme drake homework vs gaming" aria-label="Chat message" autocomplete="off">
+        <button type="submit">Send</button>
+      </form>
+
+      <p class="muted small">Quick commands:</p>
+      <div class="quick">
+        <button type="button" class="ghost" data-msg="!memes">!memes</button>
+        <button type="button" class="ghost" data-msg="!meme drake homework vs gaming">!meme drake homework vs gaming</button>
+        <button type="button" class="ghost" data-msg="!meme distracted new game | me | my backlog">!meme distracted …</button>
+        <button type="button" class="ghost" data-msg="!meme rollsafe can't lose a match | if you never queue">!meme rollsafe …</button>
+        <button type="button" class="ghost" data-msg="!meme fine">!meme fine</button>
+        <button type="button" class="ghost" data-msg="!meme drake check out www.spam-site.com">blocked: link</button>
+        <button type="button" class="ghost" data-msg="!meme pizza hello">unknown meme</button>
+      </div>
+
+      <h3 class="mt">Channel point redemption: “Make a Meme”</h3>
+      <form id="redeem-form" class="chat-form">
+        <input type="text" id="redeem-text" maxlength="200" placeholder="twobuttons stay on stream | touch grass" aria-label="Redemption text">
+        <button type="submit">Redeem</button>
+      </form>
+
+      <div class="buttons mt">
+        <button type="button" class="ghost" id="reset-cooldowns">Reset cooldowns</button>
+      </div>
+      <p class="muted small">Each viewer has a {{ cooldown }}s cooldown. Use 🎲 to switch viewers, or reset cooldowns.</p>
+    </section>
+
+    <section class="card">
+      <h2>Overlay preview</h2>
+      <div class="overlay-frame"><iframe src="/overlay?preview=1" title="Overlay preview"></iframe></div>
+      <p class="muted small">In OBS add a <b>Browser</b> source with URL <code>http://127.0.0.1:5000/overlay</code>, width 1920, height 1080.</p>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/demo.js') }}"></script>
+</body>
+</html>

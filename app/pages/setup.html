@@ -9,7 +9,7 @@
 <body>
   <header>
     <h1>StreamFace <span class="accent">Memes</span></h1>
-    <nav><a href="/setup" class="active">Face setup</a><a href="/editor">Meme editor</a></nav>
+    {% with active = "setup" %}{% include "_nav.html" %}{% endwith %}
     <p class="muted">Streamer setup. Only your own face is used, and you control it.</p>
   </header>
 

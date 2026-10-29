@@ -9,7 +9,7 @@
 <body class="wide">
   <header>
     <h1>StreamFace <span class="accent">Memes</span></h1>
-    <nav><a href="/setup">Face setup</a><a href="/editor" class="active">Meme editor</a></nav>
+    {% with active = "editor" %}{% include "_nav.html" %}{% endwith %}
   </header>
 
   <main class="editor">
@@ -105,7 +105,10 @@
       <p id="status" class="status" role="status"></p>
       <div id="result" class="result" hidden>
         <img id="result-img" alt="Generated meme">
-        <a id="result-download" download>Download PNG</a>
+        <div class="buttons">
+          <button type="button" id="send-stream">Send to stream</button>
+          <a id="result-download" class="button-link ghost" download>Download PNG</a>
+        </div>
       </div>
     </aside>
   </main>

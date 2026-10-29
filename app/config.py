@@ -22,6 +22,13 @@ class Config:
     MAX_FACES = 3
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 MB per request
 
+    # Meme requests from chat / channel points
+    COOLDOWN_SECONDS = int(os.getenv("COOLDOWN_SECONDS", "60"))   # per viewer
+    QUEUE_LIMIT = int(os.getenv("QUEUE_LIMIT", "10"))             # max memes awaiting approval
+    CAPTION_MAX_LENGTH = int(os.getenv("CAPTION_MAX_LENGTH", "80"))
+    OVERLAY_SECONDS = int(os.getenv("OVERLAY_SECONDS", "8"))
+    DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() in ("1", "true", "yes")
+
     # Twitch (used from Phase 4)
     TWITCH_CLIENT_ID = os.getenv("TWITCH_CLIENT_ID", "")
     TWITCH_CLIENT_SECRET = os.getenv("TWITCH_CLIENT_SECRET", "")

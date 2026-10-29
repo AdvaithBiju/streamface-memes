@@ -219,3 +219,116 @@ body.wide header, body.wide main, body.wide .recent { max-width: 1500px; margin-
 }
 
 [hidden] { display: none !important; }
+
+/* ---------- shared bits ---------- */
+.mt { margin-top: 16px; }
+kbd {
+  background: var(--panel);
+  border: 1px solid #3a3a3d;
+  border-radius: 4px;
+  padding: 0 5px;
+  font-size: 0.8rem;
+}
+code { background: var(--panel); padding: 1px 5px; border-radius: 4px; }
+.button-link {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid #3a3a3d;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+}
+.badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.badge.status-approved, .badge.status-shown { color: var(--ok); }
+.badge.status-rejected { color: var(--error); }
+.count {
+  display: inline-block;
+  min-width: 1.6em;
+  text-align: center;
+  background: var(--accent);
+  border-radius: 999px;
+  font-size: 0.9rem;
+  padding: 1px 8px;
+  vertical-align: middle;
+}
+
+/* ---------- mod queue ---------- */
+.mod { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.mod .card { margin: 16px 0 0; }
+.mod-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.mod-head h2 { margin: 0; }
+.mod-name { color: var(--muted); font-size: 0.85rem; }
+.mod-name input, .chat-form input, .chat-user input {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid #3a3a3d;
+  border-radius: 6px;
+  padding: 7px 8px;
+  font: inherit;
+}
+.pending { display: flex; flex-direction: column; gap: 14px; margin-top: 12px; }
+.pending-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 16px;
+  background: var(--panel);
+  border-radius: 10px;
+  padding: 12px;
+}
+.pending-card img { width: 100%; border-radius: 6px; display: block; }
+.pending-info { display: flex; flex-direction: column; gap: 6px; }
+.pending-info .who { font-size: 1.1rem; }
+.pending-info .caption { font-style: italic; overflow-wrap: anywhere; }
+.pending-info .buttons { margin-top: auto; }
+button.approve { background: #1db954; }
+.history { display: flex; flex-direction: column; gap: 8px; }
+.history-row { display: flex; align-items: center; gap: 10px; }
+.history-row img { width: 56px; height: 56px; object-fit: cover; border-radius: 6px; flex: none; }
+.history-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.history-row button { padding: 5px 10px; font-size: 0.8rem; }
+
+/* ---------- demo ---------- */
+.demo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 16px; align-items: start; }
+.demo .card { margin: 16px 0 0; }
+.chat-log {
+  height: 320px;
+  overflow-y: auto;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.92rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.chat-line { overflow-wrap: anywhere; }
+.chat-line b { color: #9ad0ff; }
+.chat-line.bot b { color: var(--accent); }
+.chat-line.bot { background: rgba(169, 112, 255, 0.1); border-radius: 4px; padding: 2px 4px; }
+.chat-line.redeem { color: var(--warn); }
+.chat-line.system { color: var(--muted); font-style: italic; }
+.chat-line.system b { color: var(--muted); }
+.chat-form { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.chat-form input[type="text"]:not(#user) { flex: 1 1 200px; min-width: 0; }
+.chat-user { display: flex; gap: 4px; }
+.chat-user input { width: 140px; }
+.chat-user button { padding: 6px 10px; }
+.quick { display: flex; flex-wrap: wrap; gap: 6px; }
+.quick button { font-size: 0.8rem; padding: 6px 10px; font-weight: 500; }
+.overlay-frame { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; }
+.overlay-frame iframe { position: absolute; inset: 0; width: 1920px; height: 1080px; border: 0; transform-origin: 0 0; }
+
+@media (max-width: 900px) {
+  .mod, .demo { grid-template-columns: 1fr; }
+  .pending-card { grid-template-columns: 1fr; }
+}

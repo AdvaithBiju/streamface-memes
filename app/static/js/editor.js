@@ -615,8 +615,22 @@ $("generate").onclick = async () => {
     $("result-img").src = res.url;
     $("result-download").href = res.url;
     $("result-download").download = `streamface-meme-${res.id}.png`;
+    $("send-stream").dataset.id = res.id;
+    $("send-stream").disabled = false;
     setStatus("Meme saved!", "ok");
     loadRecent();
+  } catch (err) {
+    setStatus(err.message, "error");
+  }
+};
+
+$("send-stream").onclick = async () => {
+  const id = $("send-stream").dataset.id;
+  if (!id) return;
+  try {
+    await postJSON(`/api/memes/${id}/send`, {});
+    $("send-stream").disabled = true;
+    setStatus("Sent to the stream overlay!", "ok");
   } catch (err) {
     setStatus(err.message, "error");
   }

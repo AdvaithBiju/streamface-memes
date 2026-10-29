@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>StreamFace Overlay</title>
+  <!-- OBS Browser Source: http://127.0.0.1:5000/overlay  (1920x1080)
+       Options: ?pos=center|left|right  ?seconds=8  ?preview=1 (checkerboard background) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/overlay.css') }}">
+</head>
+<body>
+  <div id="stage" class="stage"></div>
+  <div id="conn" class="conn" hidden>Overlay disconnected, retrying…</div>
+  <script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/overlay.js') }}"></script>
+</body>
+</html>

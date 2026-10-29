@@ -1,0 +1,112 @@
+/* Transparent page for OBS. Everything outside the meme card stays see-through. */
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+}
+
+/* ?preview=1 adds a checkerboard so you can see the overlay in a normal browser tab. */
+body.preview {
+  background-color: #2b2b30;
+  background-image:
+    linear-gradient(45deg, #34343a 25%, transparent 25%),
+    linear-gradient(-45deg, #34343a 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #34343a 75%),
+    linear-gradient(-45deg, transparent 75%, #34343a 75%);
+  background-size: 40px 40px;
+  background-position: 0 0, 0 20px, 20px -20px, -20px 0;
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4vh 3vw;
+  box-sizing: border-box;
+}
+body.pos-left .stage { justify-content: flex-start; }
+body.pos-right .stage { justify-content: flex-end; }
+
+.card {
+  --from-x: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 42vw;
+  opacity: 0;
+}
+body.pos-left .card { --from-x: -60vw; }
+body.pos-right .card { --from-x: 60vw; }
+
+.card img {
+  display: block;
+  max-width: 42vw;
+  max-height: 68vh;
+  border: 0.6vh solid #fff;
+  border-radius: 1.4vh;
+  box-shadow: 0 1.5vh 5vh rgba(0, 0, 0, 0.55);
+}
+
+.tag {
+  margin-top: -2.2vh;
+  padding: 1vh 2.2vh;
+  border-radius: 999px;
+  background: #a970ff;
+  color: #fff;
+  font-weight: 800;
+  font-size: 2.6vh;
+  letter-spacing: 0.02em;
+  box-shadow: 0 0.8vh 2.4vh rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+  max-width: 40vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: rotate(-2deg);
+}
+.tag b { color: #ffe066; }
+
+.timer {
+  position: absolute;
+  left: 1.4vh;
+  right: 1.4vh;
+  top: 1.2vh;
+  height: 0.6vh;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  transform-origin: left center;
+}
+
+.card.in { animation: pop-in 650ms cubic-bezier(0.2, 1.4, 0.4, 1) forwards; }
+.card.in .timer { animation: shrink linear forwards; animation-duration: var(--seconds, 8s); }
+.card.out { animation: slide-out 600ms cubic-bezier(0.6, -0.3, 0.8, 0.4) forwards; }
+
+@keyframes pop-in {
+  0%   { opacity: 0; transform: translateX(var(--from-x)) scale(0.3) rotate(-12deg); }
+  60%  { opacity: 1; transform: translateX(0) scale(1.06) rotate(2deg); }
+  100% { opacity: 1; transform: translateX(0) scale(1) rotate(0); }
+}
+@keyframes slide-out {
+  0%   { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: translateY(18vh) scale(0.6) rotate(8deg); }
+}
+@keyframes shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+.conn {
+  position: absolute;
+  left: 1vw;
+  bottom: 1vh;
+  padding: 0.6vh 1.2vh;
+  border-radius: 0.6vh;
+  background: rgba(200, 40, 40, 0.85);
+  color: #fff;
+  font-size: 1.6vh;
+}
+body:not(.preview) .conn { display: none; } /* never show errors on stream */
+
+[hidden] { display: none !important; }

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StreamFace Mod Queue</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="wide">
+  <header>
+    <h1>StreamFace <span class="accent">Memes</span></h1>
+    {% with active = "mod" %}{% include "_nav.html" %}{% endwith %}
+  </header>
+
+  <main class="mod">
+    <section class="card">
+      <div class="mod-head">
+        <h2>Waiting for approval <span id="pending-count" class="count">0</span></h2>
+        <label class="mod-name">Mod name <input type="text" id="mod-name" maxlength="40" placeholder="mod"></label>
+      </div>
+      <p class="muted small">Approve sends the meme to the stream overlay. Keys: <kbd>A</kbd> approve / <kbd>R</kbd> reject the oldest meme.</p>
+      <div id="pending" class="pending"></div>
+      <p id="pending-empty" class="muted">
+        Nothing waiting.{% if demo %} Try the <a href="/demo">demo chat</a> to send some memes.{% endif %}
+      </p>
+      <p id="status" class="status" role="status"></p>
+    </section>
+
+    <section class="card">
+      <h2>Recent decisions</h2>
+      <div id="history" class="history"></div>
+      <p id="history-empty" class="muted small">No decisions yet.</p>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/mod.js') }}"></script>
+</body>
+</html>

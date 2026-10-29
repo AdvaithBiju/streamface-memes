@@ -8,7 +8,7 @@ A Twitch tool that lets viewers trigger memes made with the streamer's own face.
 - Every meme goes through mod approval before it appears on stream.
 - Viewers can add only a short caption, and it has to pass a profanity and length filter.
 
-> Built for the Codex x TwitchCon Hackathon. **Status: Phase 2 of 5** (face setup + meme editor). The full setup, Twitch and OBS guide comes in Phase 5.
+> Built for the Codex x TwitchCon Hackathon. **Status: Phase 3 of 5** (face setup, meme editor, mod queue, OBS overlay, demo mode). Connecting to live Twitch chat comes in Phase 4.
 
 ## Quick start (Windows)
 
@@ -22,9 +22,64 @@ copy .env.example .env
 python run.py
 ```
 
-Open http://127.0.0.1:5000/setup to add your face, then http://127.0.0.1:5000/editor to make memes.
+Then:
+1. Open http://127.0.0.1:5000/setup and add your face.
+2. Add the overlay to OBS (see below).
+3. Open http://127.0.0.1:5000/demo and http://127.0.0.1:5000/mod side by side, send `!meme drake homework vs gaming`, approve it, and watch it pop up in OBS.
 
 On first run the app downloads MediaPipe's small face-detection model (about 230 KB) to `models/` and the built-in meme images to `templates/originals/`. If MediaPipe isn't available, it falls back to OpenCV's built-in Haar cascade automatically.
+
+## Add the overlay to OBS
+
+1. In OBS, go to **Sources → + → Browser**.
+2. Set **URL** to `http://127.0.0.1:5000/overlay`, **Width** to `1920` and **Height** to `1080`. Use your canvas size if it's different.
+3. Leave the background transparent (OBS's default custom CSS is fine) and click OK.
+
+Approved memes pop in with the requester's name, stay for `OVERLAY_SECONDS` (default 8), then slide out. If several are approved at once, they queue up. The overlay also picks up anything approved while OBS was closed.
+
+URL options:
+- `?pos=left`, `?pos=right` or `?pos=center` (the default) sets where memes appear.
+- `?seconds=10` overrides how long each meme stays.
+- `?preview=1` adds a checkerboard background, for viewing the overlay in a normal browser tab.
+
+## Mod queue (`/mod`)
+
+Every viewer meme lands here first. Mods see the image, who asked for it, where it came from (chat, channel points or demo) and the caption.
+- **Approve** sends a meme to the overlay. **Reject** drops it.
+- Keyboard: <kbd>A</kbd> approves and <kbd>R</kbd> rejects the oldest meme.
+- **Recent decisions** lists past memes, with **Replay** to show an approved meme again.
+- Set your name in **Mod name** so the history shows who decided each meme.
+
+The page updates live over Socket.IO.
+
+## Chat commands
+
+| Command | What it does |
+|---|---|
+| `!memes` | Lists the available templates |
+| `!meme <name> <caption>` | Makes a meme, e.g. `!meme drake homework vs gaming` |
+
+- **Multiple captions:** split them with `vs` or `|`, e.g. `!meme distracted new game | me | my backlog`.
+- **Channel points:** the "Make a Meme" reward takes the same text without `!meme`, e.g. `twobuttons stay on stream | touch grass`.
+- **Template names:** chat can type any part of a template's id or name, so `!meme roll` finds Roll Safe.
+
+Guard rails, all set in `.env`:
+- **`COOLDOWN_SECONDS`:** per-viewer cooldown (default 60).
+- **`QUEUE_LIMIT`:** the most memes that can wait for approval at once (default 10).
+- **`CAPTION_MAX_LENGTH`:** the longest caption allowed (default 80 characters).
+
+Captions with links, @mentions or profanity are refused. The bot tells the viewer why, and replies again when their meme is queued and when it's approved.
+
+## Demo mode (`/demo`)
+
+Demo mode lets you test everything without Twitch. You can:
+- type chat as any viewer, including random viewers via 🎲
+- use the quick buttons for common commands and filter tests
+- simulate a channel point redemption
+- reset cooldowns
+- watch a live overlay preview
+
+Bot replies appear in the fake chat. Set `DEMO_MODE=false` in `.env` to turn the page off when you go live.
 
 ## Meme editor (`/editor`)
 
@@ -42,7 +97,8 @@ On first run the app downloads MediaPipe's small face-detection model (about 230
 4. **Export:**
    - Pick an output width to resize the whole meme.
    - **Generate meme** saves a PNG to `generated/`.
-   - **Save as template** stores where your faces and captions sit, so chat can use that layout later with `!meme <name>`.
+   - **Send to stream** puts your own meme straight onto the overlay. It skips the mod queue, since it's yours.
+   - **Save as template** stores where your faces and captions sit, so chat can use that layout with `!meme <name>`.
 
 Text auto-shrinks to fit its box, in the classic white Impact style with a black outline. The server-side renderer (`app/meme.py`) uses the same layout rules as the browser preview, so the PNG looks the same as the editor.
 
@@ -59,8 +115,13 @@ app/
   meme.py          meme renderer (faces + captions -> PNG)
   memetemplates.py template registry (built-in + your own)
   imgflip.py       popular templates from Imgflip
+  pipeline.py      request -> filter/cooldown -> render -> approve -> overlay
+  commands.py      !meme / !memes / channel point handling
+  filters.py       caption filter (length, links, profanity)
+  extensions.py    Socket.IO
   routes/setup.py  /setup page + /api/faces
   routes/editor.py /editor page, templates, render API
+  routes/stream.py /mod, /overlay, /demo pages and APIs
   pages/           HTML pages (Flask templates)
   static/          CSS / JS
 templates/         templates.json (built-in template layouts)
@@ -75,6 +136,6 @@ run.py
 
 - [x] Phase 1: project structure, face upload or webcam snapshot, cutout on `/setup`
 - [x] Phase 2: `templates.json`, meme generator, and the drag-and-drop editor with uploads and popular templates
-- [ ] Phase 3: mod dashboard and OBS overlay with Socket.IO, plus demo mode
+- [x] Phase 3: mod dashboard and OBS overlay with Socket.IO, plus demo mode
 - [ ] Phase 4: Twitch `!meme` chat command and EventSub channel point redemptions
 - [ ] Phase 5: polish, animations, full docs, Meme of the Stream voting

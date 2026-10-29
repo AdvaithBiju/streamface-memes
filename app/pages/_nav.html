@@ -1,0 +1,11 @@
+<nav>
+  {% for href, label, key in [
+      ("/setup", "Face setup", "setup"),
+      ("/editor", "Meme editor", "editor"),
+      ("/mod", "Mod queue", "mod"),
+      ("/demo", "Demo chat", "demo"),
+  ] %}
+  <a href="{{ href }}"{% if key == active %} class="active"{% endif %}>{{ label }}</a>
+  {% endfor %}
+  <a href="/overlay?preview=1" target="_blank" rel="noopener">Overlay ↗</a>
+</nav>
