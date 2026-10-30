@@ -26,11 +26,25 @@
       <p id="status" class="status" role="status"></p>
     </section>
 
-    <section class="card">
-      <h2>Recent decisions</h2>
-      <div id="history" class="history"></div>
-      <p id="history-empty" class="muted small">No decisions yet.</p>
-    </section>
+    <div class="mod-side">
+      <section class="card" id="voting-card">
+        <h2>🏆 Meme of the Stream <span id="vote-state" class="badge">closed</span></h2>
+        <p class="muted small">Open voting near the end of stream. Chat types <code>!vote &lt;number&gt;</code> for viewer memes approved in the last {{ vote_hours }}h (the number is shown on stream).</p>
+        <div class="buttons">
+          <button type="button" id="vote-open">Open voting</button>
+          <button type="button" class="ghost" id="vote-show">Show leaderboard on stream</button>
+          <button type="button" class="approve" id="vote-close">Close &amp; crown winner</button>
+        </div>
+        <ol id="vote-board" class="vote-board"></ol>
+        <p id="vote-total" class="muted small"></p>
+      </section>
+
+      <section class="card">
+        <h2>Recent decisions</h2>
+        <div id="history" class="history"></div>
+        <p id="history-empty" class="muted small">No decisions yet.</p>
+      </section>
+    </div>
   </main>
 
   <script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}"></script>

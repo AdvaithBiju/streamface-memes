@@ -123,7 +123,51 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "r" || e.key === "R") act(pending[0].id, "reject");
 });
 
+// ------------------------------------------------------------------ Meme of the Stream
+
+function renderVoting(v) {
+  $("vote-state").textContent = v.open ? "open" : "closed";
+  $("vote-state").className = "badge " + (v.open ? "status-approved" : "");
+  $("vote-open").disabled = v.open;
+  $("vote-close").disabled = !v.open;
+  $("vote-show").disabled = !v.leaderboard.length;
+  const board = $("vote-board");
+  board.replaceChildren();
+  for (const m of v.leaderboard) {
+    const li = el("li", m.id === v.winner_id ? "winner" : "");
+    const img = el("img");
+    img.src = m.url;
+    img.alt = "";
+    li.append(img, el("span", "", `#${m.id} ${m.requested_by}`), el("b", "", `${m.votes}`));
+    board.append(li);
+  }
+  $("vote-total").textContent = v.round_id
+    ? `${v.total_votes} vote${v.total_votes === 1 ? "" : "s"} this round` + (v.open ? "" : " (closed)")
+    : "No voting rounds yet.";
+}
+
+async function loadVoting() {
+  try {
+    renderVoting(await (await fetch("/api/voting")).json());
+  } catch { /* ignore */ }
+}
+
+async function votingAction(action, okMsg) {
+  const res = await fetch(`/api/voting/${action}`, { method: "POST" });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) return setStatus(body.error || "Action failed.", "error");
+  setStatus(okMsg, "ok");
+  renderVoting(body);
+}
+
+$("vote-open").onclick = () => votingAction("open", "Voting is open. Chat can !vote now.");
+$("vote-show").onclick = () => votingAction("show", "Leaderboard sent to the overlay.");
+$("vote-close").onclick = () => {
+  if (confirm("Close voting and show the winner on stream?")) votingAction("close", "Winner crowned!");
+};
+
 const socket = io();
-socket.on("connect", load);
+socket.on("connect", () => { load(); loadVoting(); });
 socket.on("meme_updated", load);
+socket.on("voting_updated", renderVoting);
 setInterval(() => renderPending(pending), 30000); // refresh "x ago" labels

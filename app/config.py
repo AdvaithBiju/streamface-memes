@@ -27,6 +27,7 @@ class Config:
     QUEUE_LIMIT = int(os.getenv("QUEUE_LIMIT", "10"))             # max memes awaiting approval
     CAPTION_MAX_LENGTH = int(os.getenv("CAPTION_MAX_LENGTH", "80"))
     OVERLAY_SECONDS = int(os.getenv("OVERLAY_SECONDS", "8"))
+    VOTE_WINDOW_HOURS = int(os.getenv("VOTE_WINDOW_HOURS", "12"))  # memes eligible for !vote
     DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() in ("1", "true", "yes")
 
     # Twitch app from https://dev.twitch.tv/console/apps. Accounts are connected

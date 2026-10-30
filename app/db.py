@@ -20,6 +20,22 @@ CREATE TABLE IF NOT EXISTS memes (
     status        TEXT NOT NULL,         -- created | pending | approved | rejected | shown
     created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Meme of the Stream voting
+CREATE TABLE IF NOT EXISTS vote_rounds (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    opened_at       TEXT NOT NULL DEFAULT (datetime('now')),
+    closed_at       TEXT,
+    winner_meme_id  INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS votes (
+    round_id  INTEGER NOT NULL,
+    voter     TEXT NOT NULL,       -- lowercased viewer name; one vote per viewer per round
+    meme_id   INTEGER NOT NULL,
+    voted_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (round_id, voter)
+);
 """
 
 # Columns added after the first release; init_db adds any that are missing.

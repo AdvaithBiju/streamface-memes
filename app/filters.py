@@ -17,13 +17,14 @@ class CaptionError(ValueError):
 def clean_caption(text: str, max_length: int) -> str:
     """Normalise a viewer caption or raise CaptionError explaining why it's refused."""
     text = " ".join((text or "").split())  # collapse whitespace/newlines
+    # Check before stripping characters, which would otherwise remove the '@' or '://'.
+    if "@" in text:
+        raise CaptionError("no @mentions in captions")
+    if LINK_RE.search(text):
+        raise CaptionError("links aren't allowed in captions")
     text = ALLOWED_CHARS_RE.sub("", text).strip()
     if len(text) > max_length:
         raise CaptionError(f"caption is too long (max {max_length} characters)")
-    if LINK_RE.search(text):
-        raise CaptionError("links aren't allowed in captions")
-    if "@" in text:
-        raise CaptionError("no @mentions in captions")
     if profanity.contains_profanity(text):
         raise CaptionError("caption didn't pass the language filter")
     return text

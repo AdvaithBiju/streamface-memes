@@ -110,3 +110,106 @@ body.pos-right .card { --from-x: 60vw; }
 body:not(.preview) .conn { display: none; } /* never show errors on stream */
 
 [hidden] { display: none !important; }
+
+/* ---------- meme number ---------- */
+.tag .num {
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 999px;
+  padding: 0.1vh 1vh;
+  margin-right: 0.4vh;
+}
+
+/* ---------- leaderboard ---------- */
+.card.board {
+  background: rgba(18, 18, 22, 0.92);
+  border: 0.4vh solid #a970ff;
+  border-radius: 2vh;
+  padding: 3vh 3.5vh 3.5vh;
+  color: #fff;
+  min-width: 34vw;
+  box-shadow: 0 1.5vh 5vh rgba(0, 0, 0, 0.55);
+}
+.board-title { font-size: 4vh; font-weight: 900; margin-bottom: 2vh; text-align: center; }
+.board-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.4vh; }
+.board-list li {
+  display: grid;
+  grid-template-columns: 5vh 9vh 1fr auto;
+  align-items: center;
+  gap: 1.6vh;
+  font-size: 2.8vh;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 1.2vh;
+  padding: 1vh 1.6vh;
+}
+.board-list li.first { background: rgba(255, 224, 102, 0.18); color: #ffe066; }
+.board-list img { width: 9vh; height: 9vh; object-fit: cover; border-radius: 0.8vh; border: 0.3vh solid #fff; max-width: none; max-height: none; box-shadow: none; }
+.board-list .rank { font-size: 3.6vh; font-weight: 900; text-align: center; }
+.board-list .votes { color: #a970ff; }
+.board-list li.first .votes { color: #ffe066; }
+.board-hint { margin-top: 2vh; text-align: center; font-size: 2.4vh; color: #cfcfd6; }
+.card.board .timer { top: auto; bottom: 1.2vh; }
+
+/* ---------- winner ---------- */
+.card.winner .crown {
+  position: relative;
+  font-size: 10vh;
+  line-height: 1;
+  margin-bottom: -1.2vh;
+  z-index: 3;
+  animation: crown-drop 900ms 300ms cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+.winner-title {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 1.5vh;
+  padding: 0.8vh 3vh;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ffe066, #ffb347);
+  color: #2b1d00;
+  font-size: 3.6vh;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  box-shadow: 0 0.8vh 2.4vh rgba(0, 0, 0, 0.45);
+}
+.card.winner img { border-color: #ffe066; box-shadow: 0 0 6vh rgba(255, 224, 102, 0.6), 0 1.5vh 5vh rgba(0, 0, 0, 0.55); }
+.card.winner .tag { background: #ffb347; color: #2b1d00; }
+.card.winner .tag b { color: #2b1d00; }
+@keyframes crown-drop {
+  from { transform: translateY(-30vh) rotate(-30deg); opacity: 0; }
+  to   { transform: translateY(0) rotate(0); opacity: 1; }
+}
+
+.confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 3; }
+.confetti i {
+  position: absolute;
+  top: -3vh;
+  width: 1.2vh;
+  height: 2vh;
+  border-radius: 0.3vh;
+  animation: fall linear 3 backwards;
+}
+@keyframes fall {
+  to { transform: translate(var(--drift), 110vh) rotate(720deg); }
+}
+
+/* ---------- live vote widget ---------- */
+.vote-widget {
+  position: absolute;
+  left: 2vw;
+  bottom: 3vh;
+  min-width: 16vw;
+  padding: 1.4vh 2vh;
+  border-radius: 1.4vh;
+  background: rgba(18, 18, 22, 0.85);
+  border: 0.3vh solid #a970ff;
+  color: #fff;
+  font-size: 2.2vh;
+  box-shadow: 0 0.8vh 2.4vh rgba(0, 0, 0, 0.45);
+  animation: pop-in 500ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.vw-title { font-weight: 900; margin-bottom: 0.6vh; color: #ffe066; }
+.vote-widget ol { margin: 0; padding-left: 3vh; }
+.vote-widget li { font-weight: 600; }
+.vw-empty { color: #adadb8; font-size: 1.9vh; }

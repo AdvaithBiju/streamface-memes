@@ -2,10 +2,11 @@
 
   !meme <template> [caption]   e.g. !meme drake homework vs gaming
   !memes                       list templates
+  !vote <id>                   Meme of the Stream vote (while voting is open)
 """
 from __future__ import annotations
 
-from . import pipeline
+from . import pipeline, voting
 
 
 def handle_chat(user: str, text: str, source: str = "chat") -> bool:
@@ -21,6 +22,13 @@ def handle_chat(user: str, text: str, source: str = "chat") -> bool:
         pipeline.say("Memes: " + ", ".join(names) + " | Usage: !meme <name> <caption> "
                      "(split captions with 'vs' or '|')" if names
                      else "No memes are set up yet.")
+        return True
+
+    if command == "!vote":
+        try:
+            voting.vote(user, rest.strip().split(" ")[0] if rest.strip() else "")
+        except pipeline.RequestRefused as exc:
+            pipeline.say(str(exc))
         return True
 
     if command == "!meme":

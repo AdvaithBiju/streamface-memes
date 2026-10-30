@@ -1,7 +1,7 @@
 """Mod dashboard, OBS overlay and demo mode."""
 from flask import Blueprint, abort, current_app, jsonify, render_template, request
 
-from .. import pipeline
+from .. import pipeline, voting
 from ..commands import handle_chat, handle_redemption
 from ..db import get_db
 
@@ -16,7 +16,8 @@ def _refused(exc):
 
 @bp.get("/mod")
 def mod_page():
-    return render_template("mod.html", demo=current_app.config["DEMO_MODE"])
+    return render_template("mod.html", demo=current_app.config["DEMO_MODE"],
+                           vote_hours=current_app.config["VOTE_WINDOW_HOURS"])
 
 
 @bp.get("/overlay")
@@ -79,6 +80,26 @@ def send_to_stream(meme_id: int):
 
 def _mod_name() -> str:
     return str((request.get_json(silent=True) or {}).get("mod") or "mod").strip()[:40] or "mod"
+
+
+# ------------------------------------------------------------------ Meme of the Stream
+
+@bp.get("/api/voting")
+def voting_state():
+    return jsonify(voting.state())
+
+
+@bp.post("/api/voting/<action>")
+def voting_action(action: str):
+    actions = {"open": voting.open_round, "close": voting.close_round,
+               "show": voting.show_leaderboard}
+    if action not in actions:
+        abort(404)
+    try:
+        actions[action]()
+    except pipeline.RequestRefused as exc:
+        return _refused(exc)
+    return jsonify(voting.state())
 
 
 # ------------------------------------------------------------------ overlay API
