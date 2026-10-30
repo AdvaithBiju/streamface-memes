@@ -29,8 +29,10 @@ class Config:
     OVERLAY_SECONDS = int(os.getenv("OVERLAY_SECONDS", "8"))
     DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() in ("1", "true", "yes")
 
-    # Twitch (used from Phase 4)
-    TWITCH_CLIENT_ID = os.getenv("TWITCH_CLIENT_ID", "")
-    TWITCH_CLIENT_SECRET = os.getenv("TWITCH_CLIENT_SECRET", "")
-    TWITCH_CHANNEL = os.getenv("TWITCH_CHANNEL", "")
-    TWITCH_BOT_TOKEN = os.getenv("TWITCH_BOT_TOKEN", "")
+    # Twitch app from https://dev.twitch.tv/console/apps. Accounts are connected
+    # on the /twitch page; their tokens are stored in data/twitch.json.
+    TWITCH_CLIENT_ID = os.getenv("TWITCH_CLIENT_ID", "").strip()
+    TWITCH_CLIENT_SECRET = os.getenv("TWITCH_CLIENT_SECRET", "").strip()
+    TWITCH_REDIRECT_URI = os.getenv("TWITCH_REDIRECT_URI", "http://localhost:5000/twitch/callback")
+    TWITCH_REWARD_TITLE = os.getenv("TWITCH_REWARD_TITLE", "Make a Meme")
+    TWITCH_REWARD_COST = int(os.getenv("TWITCH_REWARD_COST", "500"))

@@ -8,7 +8,7 @@ A Twitch tool that lets viewers trigger memes made with the streamer's own face.
 - Every meme goes through mod approval before it appears on stream.
 - Viewers can add only a short caption, and it has to pass a profanity and length filter.
 
-> Built for the Codex x TwitchCon Hackathon. **Status: Phase 3 of 5** (face setup, meme editor, mod queue, OBS overlay, demo mode). Connecting to live Twitch chat comes in Phase 4.
+> Built for the Codex x TwitchCon Hackathon. **Status: Phase 4 of 5** (face setup, meme editor, mod queue, OBS overlay, demo mode, live Twitch chat + channel points).
 
 ## Quick start (Windows)
 
@@ -28,6 +28,35 @@ Then:
 3. Open http://127.0.0.1:5000/demo and http://127.0.0.1:5000/mod side by side, send `!meme drake homework vs gaming`, approve it, and watch it pop up in OBS.
 
 On first run the app downloads MediaPipe's small face-detection model (about 230 KB) to `models/` and the built-in meme images to `templates/originals/`. If MediaPipe isn't available, it falls back to OpenCV's built-in Haar cascade automatically.
+
+## Connect Twitch (`/twitch`)
+
+1. **Create a Twitch app** at https://dev.twitch.tv/console/apps → **Register Your Application**:
+   - **OAuth Redirect URL:** `http://localhost:5000/twitch/callback`
+   - **Category:** Chat Bot
+   - **Client Type:** Confidential
+2. Open the app (**Manage**), copy the **Client ID**, click **New Secret**, and put both values in `.env`:
+   ```
+   TWITCH_CLIENT_ID=your_client_id
+   TWITCH_CLIENT_SECRET=your_client_secret
+   ```
+3. Restart the app and open http://localhost:5000/twitch.
+4. Click **Connect Twitch** and sign in as **the channel you stream on**. The status should change to "connected to #yourchannel".
+5. Optional: click **Connect bot** and sign in as a second account (e.g. `yournamebot`), so the replies come from that account instead of yours.
+6. If you're an Affiliate or Partner, click **Create reward** to add the "Make a Meme" channel point reward.
+7. Click **Send test message to chat** to check that everything works.
+
+There are no tokens to copy by hand. The app uses Twitch's normal sign-in page, saves the tokens in `data/twitch.json` (git-ignored), and refreshes them automatically.
+
+How it works:
+- **Live events:** chat messages and redemptions arrive over [EventSub WebSockets](https://dev.twitch.tv/docs/eventsub/handling-websocket-events/).
+- **Replies:** the bot sends them with the Helix *Send Chat Message* API.
+- **Channel points:**
+  - Points are refunded automatically if a meme is refused (unknown template, filtered caption, cooldown, full queue) or rejected by a mod.
+  - A redemption is marked fulfilled when a mod approves the meme.
+  - This only works for the reward created on this page. Twitch only lets an app manage rewards it created.
+
+**Network note:** some school and office networks block Twitch's live connection. If `/twitch` says the connection was "redirected", try another network, like home Wi-Fi or a phone hotspot.
 
 ## Add the overlay to OBS
 
@@ -63,7 +92,7 @@ The page updates live over Socket.IO.
 - **Channel points:** the "Make a Meme" reward takes the same text without `!meme`, e.g. `twobuttons stay on stream | touch grass`.
 - **Template names:** chat can type any part of a template's id or name, so `!meme roll` finds Roll Safe.
 
-Guard rails, all set in `.env`:
+Guard rails, all set in `.env` (Twitch also adds a 15 s global cooldown on the reward):
 - **`COOLDOWN_SECONDS`:** per-viewer cooldown (default 60).
 - **`QUEUE_LIMIT`:** the most memes that can wait for approval at once (default 10).
 - **`CAPTION_MAX_LENGTH`:** the longest caption allowed (default 80 characters).
@@ -119,9 +148,12 @@ app/
   commands.py      !meme / !memes / channel point handling
   filters.py       caption filter (length, links, profanity)
   extensions.py    Socket.IO
+  twitch.py        Twitch sign-in, EventSub WebSocket, chat replies, redemptions
+  net.py           shared HTTPS settings
   routes/setup.py  /setup page + /api/faces
   routes/editor.py /editor page, templates, render API
   routes/stream.py /mod, /overlay, /demo pages and APIs
+  routes/twitch.py /twitch page, sign-in callback, reward creation
   pages/           HTML pages (Flask templates)
   static/          CSS / JS
 templates/         templates.json (built-in template layouts)
@@ -137,5 +169,5 @@ run.py
 - [x] Phase 1: project structure, face upload or webcam snapshot, cutout on `/setup`
 - [x] Phase 2: `templates.json`, meme generator, and the drag-and-drop editor with uploads and popular templates
 - [x] Phase 3: mod dashboard and OBS overlay with Socket.IO, plus demo mode
-- [ ] Phase 4: Twitch `!meme` chat command and EventSub channel point redemptions
+- [x] Phase 4: Twitch `!meme` chat command and EventSub channel point redemptions
 - [ ] Phase 5: polish, animations, full docs, Meme of the Stream voting

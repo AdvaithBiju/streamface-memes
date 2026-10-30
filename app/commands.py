@@ -34,17 +34,25 @@ def handle_chat(user: str, text: str, source: str = "chat") -> bool:
     return False
 
 
-def handle_redemption(user: str, user_input: str, source: str = "channel_points") -> None:
-    """Channel point reward text: '<template> <caption>' just like the chat command."""
+def handle_redemption(user: str, user_input: str, source: str = "channel_points",
+                      redemption: dict | None = None) -> None:
+    """Channel point reward text: '<template> <caption>' just like the chat command.
+
+    `redemption` ({id, reward_id}) comes from real Twitch redemptions so the
+    points can be refunded if the meme is refused.
+    """
     template, _, caption = (user_input or "").strip().partition(" ")
     if not template:
-        pipeline.say(f"@{user} include a meme name, e.g. 'drake homework vs gaming'. Type !memes for the list.")
+        pipeline.say(f"@{user} include a meme name, e.g. 'drake homework vs gaming'. "
+                     "Type !memes for the list. Your points were refunded.")
+        pipeline.settle_redemption(redemption, "CANCELED")
         return
-    submit(user, template, caption, source)
+    submit(user, template, caption, source, redemption)
 
 
-def submit(user: str, template: str, caption: str, source: str) -> None:
+def submit(user: str, template: str, caption: str, source: str, redemption: dict | None = None) -> None:
     try:
-        pipeline.request_meme(user, template, caption, source)
+        pipeline.request_meme(user, template, caption, source, redemption)
     except pipeline.RequestRefused as exc:
-        pipeline.say(str(exc))
+        pipeline.say(str(exc) + (" Your points were refunded." if redemption else ""))
+        pipeline.settle_redemption(redemption, "CANCELED")

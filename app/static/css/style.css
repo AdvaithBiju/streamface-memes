@@ -332,3 +332,21 @@ button.approve { background: #1db954; }
   .mod, .demo { grid-template-columns: 1fr; }
   .pending-card { grid-template-columns: 1fr; }
 }
+
+/* ---------- twitch ---------- */
+.notice { padding: 10px 14px; border-radius: 8px; background: var(--card); max-width: 960px; margin: 16px auto 0; }
+.notice.ok { color: var(--ok); }
+.notice.error { color: var(--error); }
+.steps { padding-left: 20px; line-height: 1.8; }
+.account-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+.account-row input[type="number"] {
+  width: 90px;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid #3a3a3d;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font: inherit;
+}
+.button-link.primary { background: #9146ff; border-color: #9146ff; color: #fff; }
+.ok-text { color: var(--ok); font-weight: 600; }

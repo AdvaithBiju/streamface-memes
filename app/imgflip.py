@@ -7,10 +7,11 @@ from __future__ import annotations
 
 import io
 import json
-import ssl
 import time
 import urllib.request
 from urllib.parse import urlparse
+
+from .net import SSL_CONTEXT
 
 API_URL = "https://api.imgflip.com/get_memes"
 CACHE_SECONDS = 3600
@@ -19,16 +20,10 @@ USER_AGENT = "StreamFaceMemes/0.2"
 
 _cache: dict = {"at": 0.0, "memes": []}
 
-# Certificates are still fully verified. Python 3.13+ also enables the extra
-# VERIFY_X509_STRICT checks by default, which Imgflip's image CDN chain fails
-# ("Basic Constraints of CA cert not marked critical"), so turn just that off.
-_ssl_ctx = ssl.create_default_context()
-_ssl_ctx.verify_flags &= ~getattr(ssl, "VERIFY_X509_STRICT", 0)
-
 
 def _get(url: str, limit: int) -> bytes:
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=15, context=_ssl_ctx) as resp:
+    with urllib.request.urlopen(req, timeout=15, context=SSL_CONTEXT) as resp:
         data = resp.read(limit + 1)
     if len(data) > limit:
         raise ValueError("Response too large.")

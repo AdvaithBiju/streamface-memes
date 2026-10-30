@@ -48,6 +48,18 @@ def say(message: str) -> None:
             current_app.logger.warning("Chat send failed: %s", exc)
 
 
+def settle_redemption(redemption: dict | None, status: str) -> None:
+    """Mark a channel point redemption FULFILLED or CANCELED (refund) on Twitch."""
+    twitch = current_app.extensions.get("twitch")
+    if redemption and redemption.get("id") and redemption.get("reward_id") and twitch:
+        twitch.settle_redemption(redemption["reward_id"], redemption["id"], status)
+
+
+def _settle_row(row, status: str) -> None:
+    if "redemption_id" in row.keys() and row["redemption_id"]:
+        settle_redemption({"id": row["redemption_id"], "reward_id": row["reward_id"]}, status)
+
+
 def meme_json(row) -> dict:
     keys = row.keys()
     return {
@@ -114,7 +126,8 @@ def _split_caption(caption: str, slots: int) -> list[str] | None:
 
 # ------------------------------------------------------------------ pipeline
 
-def request_meme(user: str, template_query: str, caption: str, source: str) -> dict:
+def request_meme(user: str, template_query: str, caption: str, source: str,
+                 redemption: dict | None = None) -> dict:
     """Validate and render a viewer's meme, then queue it for mod approval."""
     cfg = current_app.config
     user = (user or "viewer").strip()[:40]
@@ -157,9 +170,12 @@ def request_meme(user: str, template_query: str, caption: str, source: str) -> d
         current_app.logger.exception("Rendering meme for %s failed", user)
         raise RequestRefused(f"@{user} something went wrong making that meme, sorry!")
 
+    redemption = redemption or {}
     cur = db.execute(
-        "INSERT INTO memes (filename, template_id, requested_by, caption, status, source) "
-        "VALUES (?, ?, ?, ?, 'pending', ?)", (filename, template["id"], user, caption, source))
+        "INSERT INTO memes (filename, template_id, requested_by, caption, status, source, "
+        "redemption_id, reward_id) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?)",
+        (filename, template["id"], user, caption, source,
+         redemption.get("id"), redemption.get("reward_id")))
     db.commit()
     row = _get(cur.lastrowid)
     _broadcast(row)
@@ -170,6 +186,7 @@ def request_meme(user: str, template_query: str, caption: str, source: str) -> d
 def approve(meme_id: int, mod: str = "mod") -> dict:
     row = _decide(meme_id, "approved", mod, allowed_from=("pending", "created"))
     socketio.emit("show_meme", overlay_json(row))
+    _settle_row(row, "FULFILLED")
     if row["requested_by"] != "streamer":
         say(f"@{row['requested_by']} your meme #{row['id']} was approved. Watch the stream!")
     return meme_json(row)
@@ -177,6 +194,10 @@ def approve(meme_id: int, mod: str = "mod") -> dict:
 
 def reject(meme_id: int, mod: str = "mod") -> dict:
     row = _decide(meme_id, "rejected", mod, allowed_from=("pending",))
+    _settle_row(row, "CANCELED")  # refund channel points
+    if row["requested_by"] != "streamer":
+        say(f"@{row['requested_by']} your meme #{row['id']} wasn't approved this time."
+            + (" Your points were refunded." if row["redemption_id"] else ""))
     return meme_json(row)
 
 

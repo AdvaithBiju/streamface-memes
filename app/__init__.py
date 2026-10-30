@@ -27,14 +27,19 @@ def create_app(config_class=Config) -> Flask:
     app.extensions["template_store"] = TemplateStore(app.config["TEMPLATES_DIR"])
     app.extensions["template_store"].download_originals()
 
-    app.extensions["chat_senders"] = []  # Twitch bot registers here in Phase 4
+    from .twitch import Twitch
+    app.extensions["twitch"] = Twitch(app)
+    # Everything pipeline.say() sends also goes to Twitch chat once connected.
+    app.extensions["chat_senders"] = [app.extensions["twitch"].send_chat]
 
     from .routes.editor import bp as editor_bp
     from .routes.setup import bp as setup_bp
     from .routes.stream import bp as stream_bp
+    from .routes.twitch import bp as twitch_bp
     app.register_blueprint(setup_bp)
     app.register_blueprint(editor_bp)
     app.register_blueprint(stream_bp)
+    app.register_blueprint(twitch_bp)
 
     socketio.init_app(app)
 

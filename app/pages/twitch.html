@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StreamFace Twitch</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>StreamFace <span class="accent">Memes</span></h1>
+    {% with active = "twitch" %}{% include "_nav.html" %}{% endwith %}
+    <p class="muted">Connect your Twitch channel so viewers can use <code>!meme</code> in chat and the “Make a Meme” channel point reward.</p>
+  </header>
+
+  <main>
+    {% if message %}<p class="notice ok">{{ message }}</p>{% endif %}
+    {% if error %}<p class="notice error">{{ error }}</p>{% endif %}
+
+    <section class="card" id="setup-card" hidden>
+      <h2>1. Create a Twitch app</h2>
+      <ol class="steps">
+        <li>Go to <a href="https://dev.twitch.tv/console/apps" target="_blank" rel="noopener">dev.twitch.tv/console/apps</a> and click <b>Register Your Application</b>.</li>
+        <li>OAuth Redirect URL: <code id="redirect-uri"></code> &nbsp;·&nbsp; Category: <b>Chat Bot</b> &nbsp;·&nbsp; Client Type: <b>Confidential</b>.</li>
+        <li>Open the app (<b>Manage</b>), copy the <b>Client ID</b>, click <b>New Secret</b> and copy it.</li>
+        <li>Put both in the <code>.env</code> file in the project folder:<br>
+          <code>TWITCH_CLIENT_ID=…</code><br><code>TWITCH_CLIENT_SECRET=…</code></li>
+        <li>Restart the app and come back here.</li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2>Streamer account</h2>
+      <p class="muted small">Required. Reads your chat and channel point redemptions. Sign in as the channel you stream on.</p>
+      <div class="account-row">
+        <span id="broadcaster" class="muted">Not connected</span>
+        <a class="button-link primary" id="broadcaster-login" href="/twitch/login/broadcaster">Connect Twitch</a>
+        <button type="button" class="ghost danger" id="broadcaster-logout" hidden>Disconnect</button>
+      </div>
+      <p class="small">Status: <b id="conn-status">…</b></p>
+      <p id="conn-error" class="status error small" hidden></p>
+      <div class="buttons">
+        <button type="button" class="ghost" id="reconnect">Reconnect</button>
+        <button type="button" class="ghost" id="test-msg">Send test message to chat</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Bot account <span class="muted small">(optional)</span></h2>
+      <p class="muted small">Replies come from this account instead of yours. Make a second Twitch account (e.g. <i>yournamebot</i>), click Connect and sign in as it. Twitch will ask you to pick an account.</p>
+      <div class="account-row">
+        <span id="bot" class="muted">Not connected (replies come from the streamer account)</span>
+        <a class="button-link" id="bot-login" href="/twitch/login/bot">Connect bot</a>
+        <button type="button" class="ghost danger" id="bot-logout" hidden>Disconnect</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Channel point reward</h2>
+      <p class="muted small">Twitch Affiliates and Partners only. Creates a “<span id="reward-title"></span>” reward where viewers type a meme name and caption. Points are refunded automatically if a meme is refused or rejected.</p>
+      <p class="small" id="reward-state"></p>
+      <div class="account-row">
+        <label class="small">Cost <input type="number" id="reward-cost" min="1" value="{{ reward_cost }}"></label>
+        <button type="button" id="create-reward">Create reward</button>
+      </div>
+    </section>
+
+    <p id="status" class="status" role="status"></p>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/twitch.js') }}"></script>
+</body>
+</html>

@@ -29,6 +29,8 @@ MIGRATIONS = {
         ("decided_by", "TEXT"),
         ("decided_at", "TEXT"),
         ("shown_at", "TEXT"),
+        ("redemption_id", "TEXT"),   # Twitch channel point redemption, if any
+        ("reward_id", "TEXT"),
     ],
 }
 
