@@ -19,6 +19,16 @@ class Config:
     TEMPLATES_DIR = ROOT / "templates"   # meme templates (Phase 2)
     GENERATED_DIR = ROOT / "generated"   # finished memes (Phase 2)
 
+    # Cloud deploy (see DEPLOY.md). Locally these stay empty and nothing changes.
+    DATABASE_URL = os.getenv("DATABASE_URL", "").strip()          # Postgres; SQLite if empty
+    PUBLIC_URL = os.getenv("PUBLIC_URL", "http://localhost:5000").strip().rstrip("/")  # this server
+    USER_SITE_URL = os.getenv("USER_SITE_URL", "").strip().rstrip("/")   # viewers' Vercel site
+    MOD_SITE_URL = os.getenv("MOD_SITE_URL", "").strip().rstrip("/")     # mods' Vercel site
+    # When set, the streamer pages (/setup, /editor, /mod, /twitch, /demo) ask for this password.
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
+    # Extra Twitch logins allowed on the mod site, besides the streamer and their channel mods.
+    MOD_LOGINS = {n.strip().lower() for n in os.getenv("MOD_LOGINS", "").split(",") if n.strip()}
+
     MAX_FACES = 3
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 MB per request
 
@@ -34,6 +44,6 @@ class Config:
     # on the /twitch page; their tokens are stored in data/twitch.json.
     TWITCH_CLIENT_ID = os.getenv("TWITCH_CLIENT_ID", "").strip()
     TWITCH_CLIENT_SECRET = os.getenv("TWITCH_CLIENT_SECRET", "").strip()
-    TWITCH_REDIRECT_URI = os.getenv("TWITCH_REDIRECT_URI", "http://localhost:5000/twitch/callback")
+    TWITCH_REDIRECT_URI = os.getenv("TWITCH_REDIRECT_URI", "").strip() or f"{PUBLIC_URL}/twitch/callback"
     TWITCH_REWARD_TITLE = os.getenv("TWITCH_REWARD_TITLE", "Make a Meme")
     TWITCH_REWARD_COST = int(os.getenv("TWITCH_REWARD_COST", "500"))

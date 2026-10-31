@@ -2,6 +2,7 @@
 from flask import Blueprint, abort, current_app, jsonify, render_template, request
 
 from .. import pipeline, voting
+from ..auth import mod_name
 from ..commands import handle_chat, handle_redemption
 from ..db import get_db
 
@@ -48,7 +49,7 @@ def queue():
 @bp.post("/api/memes/<int:meme_id>/approve")
 def approve(meme_id: int):
     try:
-        return jsonify(pipeline.approve(meme_id, _mod_name()))
+        return jsonify(pipeline.approve(meme_id, mod_name()))
     except pipeline.RequestRefused as exc:
         return _refused(exc)
 
@@ -56,7 +57,7 @@ def approve(meme_id: int):
 @bp.post("/api/memes/<int:meme_id>/reject")
 def reject(meme_id: int):
     try:
-        return jsonify(pipeline.reject(meme_id, _mod_name()))
+        return jsonify(pipeline.reject(meme_id, mod_name()))
     except pipeline.RequestRefused as exc:
         return _refused(exc)
 
@@ -71,15 +72,11 @@ def replay(meme_id: int):
 
 @bp.post("/api/memes/<int:meme_id>/send")
 def send_to_stream(meme_id: int):
-    """The streamer's own editor memes skip the queue."""
+    """Editor memes go through mod approval like everything else."""
     try:
-        return jsonify(pipeline.approve(meme_id, "streamer"))
+        return jsonify(pipeline.submit_for_approval(meme_id))
     except pipeline.RequestRefused as exc:
         return _refused(exc)
-
-
-def _mod_name() -> str:
-    return str((request.get_json(silent=True) or {}).get("mod") or "mod").strip()[:40] or "mod"
 
 
 # ------------------------------------------------------------------ Meme of the Stream

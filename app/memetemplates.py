@@ -20,6 +20,8 @@ from pathlib import Path
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
+from . import storage
+
 MAX_TEMPLATE_SIZE = 1600
 
 log = logging.getLogger(__name__)
@@ -88,6 +90,7 @@ class TemplateStore:
         tmp = self.user_json.with_suffix(".tmp")
         tmp.write_text(json.dumps({"templates": templates}, indent=2), encoding="utf-8")
         tmp.replace(self.user_json)
+        storage.save(self.user_json)
 
     def all(self) -> list[dict]:
         builtin = [{**t, "source": "builtin"} for t in self._read(self.builtin_dir / "templates.json")
@@ -124,6 +127,7 @@ class TemplateStore:
             tid = self._unique_id(name)
             filename = f"{tid}.jpg"
             img.save(self.user_dir / filename, quality=92)
+            storage.save(self.user_dir / filename)
             template = {"id": tid, "name": name, "file": filename, "source": source,
                         "width": img.width, "height": img.height,
                         "face_slots": [],
@@ -140,6 +144,7 @@ class TemplateStore:
             src = self.image_path(base)
             filename = f"{tid}{src.suffix}"
             shutil.copyfile(src, self.user_dir / filename)
+            storage.save(self.user_dir / filename)
             template = {"id": tid, "name": name, "file": filename, "source": "layout",
                         "width": base["width"], "height": base["height"],
                         "face_slots": face_slots, "captions": captions}
@@ -154,3 +159,4 @@ class TemplateStore:
                 raise TemplateError("Only your own templates can be deleted.")
             self._write_user([t for t in templates if t["id"] != template_id])
             (self.user_dir / match["file"]).unlink(missing_ok=True)
+            storage.delete(self.user_dir / match["file"])

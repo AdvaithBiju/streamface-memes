@@ -3,6 +3,7 @@ import uuid
 
 from flask import Blueprint, current_app, jsonify, render_template, request, send_from_directory
 
+from .. import storage
 from ..db import get_db
 from ..face import FaceError, process_photo
 
@@ -53,6 +54,7 @@ def upload_faces():
         filename = f"{uuid.uuid4().hex}.png"
         try:
             process_photo(detector, f.read(), current_app.config["FACES_DIR"] / filename)
+            storage.save(current_app.config["FACES_DIR"] / filename)
         except FaceError as exc:
             errors.append(f"{f.filename}: {exc}")
             continue
@@ -75,6 +77,7 @@ def delete_face(face_id: int):
         return jsonify(error="Not found."), 404
     db.execute("DELETE FROM faces WHERE id = ?", (face_id,))
     db.commit()
+    storage.delete(current_app.config["FACES_DIR"] / row["filename"])
     try:
         (current_app.config["FACES_DIR"] / row["filename"]).unlink(missing_ok=True)
     except OSError as exc:  # e.g. Windows file lock while the image is being served

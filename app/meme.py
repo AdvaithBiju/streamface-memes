@@ -26,6 +26,7 @@ FONT_CANDIDATES = [
     "/Library/Fonts/Impact.ttf",
     "/System/Library/Fonts/Supplemental/Impact.ttf",
     "/usr/share/fonts/truetype/msttcorefonts/Impact.ttf",
+    "/usr/share/fonts/truetype/anton/Anton-Regular.ttf",  # Impact look-alike (OFL), installed by the Dockerfile
     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
 ]
 

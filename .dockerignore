@@ -1,0 +1,13 @@
+.git
+.venv
+.env
+.pytest_cache
+**/__pycache__
+data/
+generated/*
+!generated/.gitkeep
+models/
+templates/originals/
+templates/user/
+tests/
+web/

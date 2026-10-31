@@ -630,7 +630,7 @@ $("send-stream").onclick = async () => {
   try {
     await postJSON(`/api/memes/${id}/send`, {});
     $("send-stream").disabled = true;
-    setStatus("Sent to the stream overlay!", "ok");
+    setStatus("Sent to the mod queue for approval.", "ok");
   } catch (err) {
     setStatus(err.message, "error");
   }

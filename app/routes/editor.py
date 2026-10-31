@@ -3,7 +3,7 @@ import uuid
 
 from flask import Blueprint, abort, current_app, jsonify, render_template, request, send_from_directory
 
-from .. import imgflip
+from .. import imgflip, storage
 from ..db import get_db
 from ..meme import MemeError, parse_layers, render_meme
 from ..memetemplates import TemplateError
@@ -138,6 +138,7 @@ def render():
 
     filename = f"{uuid.uuid4().hex}.png"
     image.save(current_app.config["GENERATED_DIR"] / filename, optimize=True)
+    storage.save(current_app.config["GENERATED_DIR"] / filename)
     caption = " / ".join(l["text"] for l in layers if l["type"] == "text")[:300]
     db = get_db()
     cur = db.execute(

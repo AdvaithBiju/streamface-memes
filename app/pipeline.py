@@ -21,6 +21,7 @@ import uuid
 
 from flask import current_app
 
+from . import storage
 from .db import get_db
 from .extensions import socketio
 from .filters import CaptionError, clean_caption
@@ -128,19 +129,47 @@ def _split_caption(caption: str, slots: int) -> list[str] | None:
 
 def request_meme(user: str, template_query: str, caption: str, source: str,
                  redemption: dict | None = None) -> dict:
-    """Validate and render a viewer's meme, then queue it for mod approval."""
-    cfg = current_app.config
+    """Validate and render a chat meme ("!meme drake a vs b"), then queue it for approval."""
     user = (user or "viewer").strip()[:40]
-    key = user.lower()
-
     template = find_template(template_query)
     if template is None:
         raise RequestRefused(f"@{user} I don't know that meme. Type !memes to see the list.")
-
     try:
-        caption = clean_caption(caption, cfg["CAPTION_MAX_LENGTH"])
+        caption = clean_caption(caption, current_app.config["CAPTION_MAX_LENGTH"])
     except CaptionError as exc:
         raise RequestRefused(f"@{user} {exc}.")
+    captions = _split_caption(caption, len(template.get("captions", [])))
+    row = _queue_meme(user, template, captions, caption, source, redemption)
+    say(f"@{user} your {template['name']} meme (#{row['id']}) is waiting for mod approval!")
+    return meme_json(row)
+
+
+def submit_web_meme(user: str, template_id: str, captions: list) -> dict:
+    """A meme from the viewers' website: one caption per caption box."""
+    template = current_app.extensions["template_store"].get(str(template_id))
+    if template is None or not template.get("face_slots"):
+        raise RequestRefused("Pick a meme template first.")
+    slots = len(template.get("captions", []))
+    if not isinstance(captions, list) or len(captions) > slots:
+        raise RequestRefused("That doesn't match the template's caption boxes.")
+    cleaned = []
+    for text in captions:
+        try:
+            cleaned.append(clean_caption(str(text or ""), current_app.config["CAPTION_MAX_LENGTH"]))
+        except CaptionError as exc:
+            raise RequestRefused(f"{str(exc)[0].upper()}{str(exc)[1:]}.")
+    cleaned += [""] * (slots - len(cleaned))
+    if not any(cleaned):
+        raise RequestRefused("Write at least one caption.")
+    return meme_json(_queue_meme(user, template, cleaned, " | ".join(c for c in cleaned if c), "web"))
+
+
+def _queue_meme(user: str, template: dict, captions: list[str], caption_text: str, source: str,
+                redemption: dict | None = None):
+    """Cooldown + queue checks, render with a random face, store as pending."""
+    cfg = current_app.config
+    user = (user or "viewer").strip()[:40]
+    key = user.lower()
 
     db = get_db()
     faces = db.execute("SELECT id, filename FROM faces").fetchall()
@@ -158,12 +187,12 @@ def request_meme(user: str, template_query: str, caption: str, source: str,
 
     try:
         face = random.choice(faces)  # streamers with several photos get some variety
-        captions = _split_caption(caption, len(template.get("captions", [])))
         layers = layers_from_template(template, face["id"], captions)
         image = render_meme(current_app.extensions["template_store"].image_path(template), layers,
                             {face["id"]: cfg["FACES_DIR"] / face["filename"]})
         filename = f"{uuid.uuid4().hex}.png"
         image.save(cfg["GENERATED_DIR"] / filename, optimize=True)
+        storage.save(cfg["GENERATED_DIR"] / filename)
     except Exception:
         with _lock:
             _cooldowns.pop(key, None)  # don't punish the viewer for our error
@@ -174,17 +203,30 @@ def request_meme(user: str, template_query: str, caption: str, source: str,
     cur = db.execute(
         "INSERT INTO memes (filename, template_id, requested_by, caption, status, source, "
         "redemption_id, reward_id) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?)",
-        (filename, template["id"], user, caption, source,
+        (filename, template["id"], user, caption_text, source,
          redemption.get("id"), redemption.get("reward_id")))
     db.commit()
     row = _get(cur.lastrowid)
     _broadcast(row)
-    say(f"@{user} your {template['name']} meme (#{row['id']}) is waiting for mod approval!")
+    return row
+
+
+def submit_for_approval(meme_id: int) -> dict:
+    """Put a meme made in the editor into the mod queue."""
+    db = get_db()
+    cur = db.execute("UPDATE memes SET status = 'pending' WHERE id = ? AND status = 'created'", (meme_id,))
+    db.commit()
+    row = _get(meme_id)
+    if row is None:
+        raise RequestRefused("That meme doesn't exist.")
+    if cur.rowcount == 0:
+        raise RequestRefused(f"Meme #{meme_id} is already {row['status']}.")
+    _broadcast(row)
     return meme_json(row)
 
 
 def approve(meme_id: int, mod: str = "mod") -> dict:
-    row = _decide(meme_id, "approved", mod, allowed_from=("pending", "created"))
+    row = _decide(meme_id, "approved", mod, allowed_from=("pending",))
     socketio.emit("show_meme", overlay_json(row))
     _settle_row(row, "FULFILLED")
     if row["requested_by"] != "streamer":

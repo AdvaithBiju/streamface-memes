@@ -52,7 +52,8 @@ def test_full_voting_round(client, sio):
 def test_streamer_memes_are_not_eligible(client, sio):
     template = client.get("/api/templates").json[0]
     rendered = client.post("/api/render", json={"template_id": template["id"], "layers": []}).json
-    client.post(f"/api/memes/{rendered['id']}/send")
+    assert client.post(f"/api/memes/{rendered['id']}/send").json["status"] == "pending"
+    client.post(f"/api/memes/{rendered['id']}/approve")
     client.post("/api/voting/open")
     vote(client, "v1", rendered["id"])
     assert "isn't in the running" in bot_messages(sio)[-1]

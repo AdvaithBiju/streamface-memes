@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StreamFace Memes</title>
+  <meta name="description" content="Make a meme with the streamer's face. A mod approves it, then it pops up on stream.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>😂</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">StreamFace <span class="accent">Memes</span></div>
+    <div id="who" class="who" hidden>
+      <span id="who-name"></span>
+      <button type="button" class="ghost small" id="sign-out">Sign out</button>
+    </div>
+  </header>
+
+  <p id="waking" class="banner" hidden>Waking up the server… free hosting naps when nobody's around, so this can take up to a minute.</p>
+  <p id="error" class="banner error" hidden></p>
+
+  <main>
+    <section id="signin" class="card hero" hidden>
+      <h1>Put the streamer's face in a meme</h1>
+      <p class="muted">Pick a template, write the captions, and send it in. A mod checks it, then it pops up live on stream.</p>
+      <button type="button" id="sign-in" class="big">Sign in with Twitch</button>
+      <p class="muted small">We only see your Twitch username. No other permissions.</p>
+    </section>
+
+    <section id="maker" hidden>
+      <div class="card">
+        <h2>1. Pick a meme</h2>
+        <div id="templates" class="templates"></div>
+        <p id="templates-empty" class="muted" hidden>No meme templates yet. Check back soon!</p>
+      </div>
+
+      <div class="card editor" id="editor" hidden>
+        <div class="preview">
+          <canvas id="preview"></canvas>
+          <p class="muted small">Preview. The purple oval becomes the streamer's face.</p>
+        </div>
+        <div class="fields">
+          <h2>2. Write your captions</h2>
+          <div id="captions"></div>
+          <button type="button" id="submit" class="big">Send to the mods</button>
+          <p id="status" class="status" role="status"></p>
+          <p class="muted small">Keep it friendly: no links, no @mentions, nothing nasty. Mods have the final say.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Your memes</h2>
+        <div id="mine" class="mine"></div>
+        <p id="mine-empty" class="muted">Nothing yet. Make your first one above!</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

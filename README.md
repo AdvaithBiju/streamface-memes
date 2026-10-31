@@ -19,11 +19,18 @@ Built for the **Codex x TwitchCon Hackathon**.
 | Page | What it does |
 |---|---|
 | **`/setup`** | Upload 1–3 face photos or take a webcam snapshot. MediaPipe finds the face and the app saves a transparent oval cutout. |
-| **`/editor`** | A drag-and-drop meme maker for the streamer: 8 built-in classics, the top 100 Imgflip templates, or your own image. Move, resize and rotate faces and captions. Export a PNG or send it straight to stream. |
+| **`/editor`** | A drag-and-drop meme maker for the streamer: 8 built-in classics, the top 100 Imgflip templates, or your own image. Move, resize and rotate faces and captions. Export a PNG or send it to the mod queue for approval. |
 | **`/mod`** | Live approval queue (<kbd>A</kbd>/<kbd>R</kbd> shortcuts), history with replay, and the Meme of the Stream controls. |
 | **`/overlay`** | Transparent OBS browser source. Memes pop in with their number and requester and queue up if several arrive at once. Also shows a live vote widget, the leaderboard and a winner reveal with confetti. |
 | **`/twitch`** | Sign in with Twitch, add an optional bot account, create the "Make a Meme" channel point reward, and see the connection status. |
 | **`/demo`** | Fake Twitch chat and channel point redemptions, with an overlay preview. Test everything without going live. |
+
+**Online sites** (deployed on Vercel, see [DEPLOY.md](DEPLOY.md)):
+
+| Site | What it does |
+|---|---|
+| **Viewers' site** (`web/user`) | Viewers sign in with Twitch, pick a template, write captions with a live preview, and send the meme for approval. They can see whether each of their memes was approved. |
+| **Mods' site** (`web/mod`) | The streamer and their Twitch mods sign in to approve or reject memes and run Meme of the Stream from any device. Other accounts are refused. |
 
 ---
 
@@ -154,6 +161,11 @@ Every viewer meme passes through these checks:
 | `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` | | From your Twitch app |
 | `TWITCH_REDIRECT_URI` | `http://localhost:5000/twitch/callback` | Must match the Twitch app |
 | `TWITCH_REWARD_TITLE` / `TWITCH_REWARD_COST` | `Make a Meme` / `500` | Channel point reward |
+| `DATABASE_URL` | | Online only: Postgres (Neon). Uses SQLite when blank |
+| `PUBLIC_URL` | `http://localhost:5000` | This server's address (Twitch sign-in comes back here) |
+| `ADMIN_PASSWORD` | | Online only: password for the streamer pages |
+| `USER_SITE_URL` / `MOD_SITE_URL` | | Online only: the two Vercel sites |
+| `MOD_LOGINS` | | Extra Twitch logins allowed on the mods' site |
 
 ---
 
@@ -170,7 +182,8 @@ The demo has quick buttons for the filter cases (links, unknown meme) and a chan
 
 ## Privacy & safety
 
-- **Everything runs on the streamer's own PC.** Nothing about the streamer's face is uploaded anywhere. The app only listens on `127.0.0.1` by default.
+- **Runs on the streamer's own PC by default.** Nothing about the streamer's face is uploaded anywhere, and the app only listens on `127.0.0.1`. If you deploy it online (DEPLOY.md), the face photos are stored in your own Neon database.
+- **Online, everything is locked by default:** the streamer pages need `ADMIN_PASSWORD`, the mods' site only lets in the streamer and their Twitch mods, and viewers have to sign in with Twitch. Sign-in asks Twitch for no permissions; it only learns the username.
 - **Git-ignored:** face photos, generated memes, the database and Twitch tokens all live in `data/`, `generated/` and `templates/user/`.
 - **Copyright:** the meme template images are copyrighted, so they aren't in this repo. `templates/templates.json` only holds the image links and the face and caption positions, and the images are downloaded on first start.
 - **Mods first:** no viewer meme reaches the stream without a mod's approval.
@@ -205,7 +218,9 @@ Twitch chat / channel points ──EventSub WebSocket──► twitch.py
 app/
   __init__.py        Flask app factory
   config.py          settings + .env loading
-  db.py              SQLite schema + migrations (data/streamface.db)
+  db.py              SQLite locally, Postgres online (same SQL)
+  storage.py         online: keeps data files in Postgres across restarts
+  auth.py            who can use what online (admin password, viewer and mod sign-in)
   face.py            face detection + oval cutout
   meme.py            meme renderer (faces + captions -> PNG)
   memetemplates.py   template registry (built-in + your own)
@@ -217,10 +232,13 @@ app/
   twitch.py          Twitch sign-in, EventSub WebSocket, chat replies, redemptions
   net.py             shared HTTPS settings
   extensions.py      Socket.IO
-  routes/            setup, editor, stream (mod/overlay/demo/voting), twitch
+  routes/            setup, editor, stream (mod/overlay/demo/voting), twitch, sites (viewer + mod sites)
   pages/             HTML pages
   static/            CSS / JS (plain, no framework)
 templates/templates.json   built-in template layouts (images downloaded on first start)
+web/user/                  viewers' site (static, deployed on Vercel)
+web/mod/                   mods' site (static, deployed on Vercel)
+Dockerfile, render.yaml    backend deploy on Render
 tests/                     pytest suite (offline, uses temp folders)
 run.py
 ```
@@ -232,7 +250,7 @@ pip install -r requirements-dev.txt
 python -m pytest
 ```
 
-The tests run fully offline against temporary folders, with a fake Twitch. They never touch your `data/` folder.
+The tests run fully offline against temporary folders, with a fake Twitch. They never touch your `data/` folder. Set `TEST_DATABASE_URL` to a throwaway Postgres to run the same tests on Postgres.
 
 ---
 

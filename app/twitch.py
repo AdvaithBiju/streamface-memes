@@ -23,6 +23,7 @@ import urllib.request
 
 import simple_websocket
 
+from . import storage
 from .net import SSL_CONTEXT
 
 log = logging.getLogger(__name__)
@@ -36,7 +37,8 @@ EVENTSUB_URL = "wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=30"
 SCOPES = {
     # The streamer's account: read chat + redemptions, manage the meme reward.
     "broadcaster": ["user:read:chat", "user:write:chat",
-                    "channel:read:redemptions", "channel:manage:redemptions"],
+                    "channel:read:redemptions", "channel:manage:redemptions",
+                    "moderation:read"],  # lets the mod site check who your mods are
     # Optional bot account that posts the replies.
     "bot": ["user:write:chat"],
 }
@@ -78,6 +80,7 @@ class TokenStore:
             tmp = self.path.with_suffix(".tmp")
             tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
             tmp.replace(self.path)
+            storage.save(self.path)
 
 
 class Twitch:
@@ -220,6 +223,40 @@ class Twitch:
         if role == "broadcaster":
             self.restart()
         return role, info["login"]
+
+    # ------------------------------------------------------------------ viewer / mod site sign-in
+
+    def site_login_url(self, state: str, redirect_uri: str) -> str:
+        """Sign-in for the Vercel sites: identity only, no permissions requested."""
+        return AUTH_URL + "?" + urllib.parse.urlencode({
+            "client_id": self.client_id, "redirect_uri": redirect_uri,
+            "response_type": "code", "scope": "", "state": state,
+        })
+
+    def identify(self, code: str, redirect_uri: str) -> dict:
+        """Swap a sign-in code for the viewer's Twitch login and user id."""
+        tok = self._request("POST", TOKEN_URL, form={
+            "client_id": self.client_id, "client_secret": self.client_secret,
+            "code": code, "grant_type": "authorization_code", "redirect_uri": redirect_uri,
+        })
+        info = self._request("GET", VALIDATE_URL, token=tok["access_token"])
+        return {"login": info["login"], "user_id": info["user_id"]}
+
+    def is_moderator(self, user_id: str) -> bool:
+        """True for the streamer and the channel's Twitch moderators."""
+        broadcaster = self.account("broadcaster")
+        if not broadcaster:
+            return False
+        if user_id == broadcaster["user_id"]:
+            return True
+        try:
+            res = self._helix("broadcaster", "GET", "/moderation/moderators",
+                              params={"broadcaster_id": broadcaster["user_id"], "user_id": user_id})
+        except TwitchError as exc:
+            log.warning("Couldn't check moderators (reconnect the streamer on /twitch "
+                        "to grant moderation:read): %s", exc)
+            return False
+        return bool(res.get("data"))
 
     def disconnect(self, role: str) -> None:
         if role == "broadcaster":

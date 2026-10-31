@@ -1,0 +1,26 @@
+# Render Blueprint for the StreamFace backend. See DEPLOY.md.
+services:
+  - type: web
+    name: streamface-memes
+    runtime: docker
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: PUBLIC_URL            # this service's own URL
+        value: https://streamface-memes.onrender.com
+      - key: DATABASE_URL          # Neon Postgres connection string
+        sync: false
+      - key: ADMIN_PASSWORD        # password for /setup, /editor, /mod, /twitch
+        sync: false
+      - key: TWITCH_CLIENT_ID
+        sync: false
+      - key: TWITCH_CLIENT_SECRET
+        sync: false
+      - key: USER_SITE_URL         # viewers' Vercel site, e.g. https://streamface-memes.vercel.app
+        sync: false
+      - key: MOD_SITE_URL          # mods' Vercel site, e.g. https://streamface-mod.vercel.app
+        sync: false
+      - key: MOD_LOGINS            # optional: extra Twitch logins allowed on the mod site
+        sync: false

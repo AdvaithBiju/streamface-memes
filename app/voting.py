@@ -6,6 +6,8 @@ again changes the vote). Closing the round crowns the winner on the overlay.
 """
 from __future__ import annotations
 
+from datetime import datetime, timedelta
+
 from flask import current_app
 
 from .db import get_db
@@ -13,6 +15,7 @@ from .extensions import socketio
 from .pipeline import RequestRefused, say
 
 LEADERBOARD_SIZE = 5
+SQL_TIME = "%Y-%m-%d %H:%M:%S"  # format of datetime('now') in the database
 
 
 def current_round():
@@ -21,10 +24,12 @@ def current_round():
 
 
 def _eligible(round_row, meme_id: int):
+    opened = datetime.strptime(round_row["opened_at"], SQL_TIME)
+    since = (opened - timedelta(hours=current_app.config["VOTE_WINDOW_HOURS"])).strftime(SQL_TIME)
     return get_db().execute(
         "SELECT * FROM memes WHERE id = ? AND status IN ('approved', 'shown') "
-        "AND requested_by != 'streamer' AND decided_at >= datetime(?, ?)",
-        (meme_id, round_row["opened_at"], f"-{current_app.config['VOTE_WINDOW_HOURS']} hours"),
+        "AND requested_by != 'streamer' AND decided_at >= ?",
+        (meme_id, since),
     ).fetchone()
 
 

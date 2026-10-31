@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StreamFace Mod</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">StreamFace <span class="accent">Mod</span></div>
+    <div id="who" class="who" hidden>
+      <span id="who-name"></span>
+      <button type="button" class="ghost small" id="sign-out">Sign out</button>
+    </div>
+  </header>
+
+  <p id="waking" class="banner" hidden>Waking up the server… free hosting naps when nobody's around, so this can take up to a minute.</p>
+  <p id="error" class="banner error" hidden></p>
+
+  <section id="signin" class="card hero" hidden>
+    <h1>Mod dashboard</h1>
+    <p class="muted">Approve or reject viewers' memes before they go on stream. For the streamer and their Twitch mods only.</p>
+    <button type="button" id="sign-in" class="big">Sign in with Twitch</button>
+  </section>
+
+  <main class="mod" id="dashboard" hidden>
+    <section class="card">
+      <h2>Waiting for approval <span id="pending-count" class="count">0</span></h2>
+      <p class="muted small">Approve sends the meme to the stream overlay. Keys: <kbd>A</kbd> approve / <kbd>R</kbd> reject the oldest meme.</p>
+      <div id="pending" class="pending"></div>
+      <p id="pending-empty" class="muted">Nothing waiting. New memes show up here automatically.</p>
+      <p id="status" class="status" role="status"></p>
+    </section>
+
+    <div class="mod-side">
+      <section class="card">
+        <h2>🏆 Meme of the Stream <span id="vote-state" class="badge">closed</span></h2>
+        <p class="muted small">Open voting near the end of stream. Chat types <code>!vote &lt;number&gt;</code> for viewer memes approved recently (the number is shown on stream).</p>
+        <div class="buttons">
+          <button type="button" id="vote-open">Open voting</button>
+          <button type="button" class="ghost" id="vote-show">Show leaderboard on stream</button>
+          <button type="button" class="approve" id="vote-close">Close &amp; crown winner</button>
+        </div>
+        <ol id="vote-board" class="vote-board"></ol>
+        <p id="vote-total" class="muted small"></p>
+      </section>
+
+      <section class="card">
+        <h2>Recent decisions</h2>
+        <div id="history" class="history"></div>
+        <p id="history-empty" class="muted small">No decisions yet.</p>
+      </section>
+    </div>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
