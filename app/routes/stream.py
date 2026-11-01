@@ -89,7 +89,7 @@ def voting_state():
 @bp.post("/api/voting/<action>")
 def voting_action(action: str):
     actions = {"open": voting.open_round, "close": voting.close_round,
-               "show": voting.show_leaderboard}
+               "show": voting.show_leaderboard, "choices": voting.show_choices}
     if action not in actions:
         abort(404)
     try:

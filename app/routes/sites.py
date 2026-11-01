@@ -8,7 +8,7 @@ import urllib.parse
 
 from flask import Blueprint, current_app, g, jsonify, redirect, request, session
 
-from .. import pipeline
+from .. import pipeline, voting
 from ..auth import make_token
 from ..db import get_db
 from ..twitch import TwitchError
@@ -159,3 +159,14 @@ def viewer_memes():
         "SELECT * FROM memes WHERE lower(requested_by) = ? ORDER BY id DESC LIMIT 12",
         (g.user["login"].lower(),)).fetchall()
     return jsonify([pipeline.meme_json(r) for r in rows])
+
+
+@bp.post("/api/viewer/vote")
+def viewer_vote():
+    """Same as typing !vote <number> in chat."""
+    login = g.user["login"]
+    try:
+        voting.vote(login, str((request.get_json(silent=True) or {}).get("meme_id", "")))
+    except pipeline.RequestRefused as exc:
+        return jsonify(error=str(exc).removeprefix(f"@{login} ")), 409
+    return jsonify(voting.state())

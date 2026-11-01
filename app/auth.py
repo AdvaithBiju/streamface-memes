@@ -40,7 +40,7 @@ VIEWER = [re.compile(r"^/api/viewer/"), re.compile(r"^/api/me$")]
 MOD = [
     re.compile(r"^/api/queue$"),
     re.compile(r"^/api/memes/\d+/(approve|reject|replay)$"),
-    re.compile(r"^/api/voting/(open|close|show)$"),
+    re.compile(r"^/api/voting/(open|close|show|choices)$"),
 ]
 
 

@@ -128,12 +128,20 @@ document.addEventListener("keydown", (e) => {
 function renderVoting(v) {
   $("vote-state").textContent = v.open ? "open" : "closed";
   $("vote-state").className = "badge " + (v.open ? "status-approved" : "");
-  $("vote-open").disabled = v.open;
+  const choices = v.candidates || [];
+  $("vote-open").disabled = v.open || !choices.length;
   $("vote-close").disabled = !v.open;
+  $("vote-choices").disabled = !v.open;
   $("vote-show").disabled = !v.leaderboard.length;
+  // Open: every meme in the running, most votes first. Closed: last round's results,
+  // or what the next round would have.
+  const results = !v.open && v.leaderboard.length;
+  const rows = results ? v.leaderboard : [...choices].sort((a, b) => b.votes - a.votes || a.id - b.id);
+  $("vote-board-title").textContent = v.open ? `In the running (${choices.length})`
+    : results ? "Last round" : choices.length ? `Ready to vote on (${choices.length})` : "";
   const board = $("vote-board");
   board.replaceChildren();
-  for (const m of v.leaderboard) {
+  for (const m of rows) {
     const li = el("li", m.id === v.winner_id ? "winner" : "");
     const img = el("img");
     img.src = m.url;
@@ -141,9 +149,11 @@ function renderVoting(v) {
     li.append(img, el("span", "", `#${m.id} ${m.requested_by}`), el("b", "", `${m.votes}`));
     board.append(li);
   }
-  $("vote-total").textContent = v.round_id
-    ? `${v.total_votes} vote${v.total_votes === 1 ? "" : "s"} this round` + (v.open ? "" : " (closed)")
-    : "No voting rounds yet.";
+  $("vote-total").textContent = v.open
+    ? `${v.total_votes} vote${v.total_votes === 1 ? "" : "s"} this round`
+    : choices.length
+      ? `${choices.length} viewer meme${choices.length === 1 ? "" : "s"} ready for the next round.`
+      : "Nothing to vote on yet. Approve some viewer memes first.";
 }
 
 async function loadVoting() {
@@ -160,8 +170,9 @@ async function votingAction(action, okMsg) {
   renderVoting(body);
 }
 
-$("vote-open").onclick = () => votingAction("open", "Voting is open. Chat can !vote now.");
+$("vote-open").onclick = () => votingAction("open", "Voting is open! The choices are on stream and in chat.");
 $("vote-show").onclick = () => votingAction("show", "Leaderboard sent to the overlay.");
+$("vote-choices").onclick = () => votingAction("choices", "Choices sent to the overlay.");
 $("vote-close").onclick = () => {
   if (confirm("Close voting and show the winner on stream?")) votingAction("close", "Winner crowned!");
 };

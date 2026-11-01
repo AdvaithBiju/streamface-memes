@@ -21,7 +21,7 @@ Built for the **Codex x TwitchCon Hackathon**.
 | **`/setup`** | Upload 1–3 face photos or take a webcam snapshot. MediaPipe finds the face and the app saves a transparent oval cutout. |
 | **`/editor`** | A drag-and-drop meme maker for the streamer: 8 built-in classics, the top 100 Imgflip templates, or your own image. Move, resize and rotate faces and captions. Export a PNG or send it to the mod queue for approval. |
 | **`/mod`** | Live approval queue (<kbd>A</kbd>/<kbd>R</kbd> shortcuts), history with replay, and the Meme of the Stream controls. |
-| **`/overlay`** | Transparent OBS browser source. Memes pop in with their number and requester and queue up if several arrive at once. Also shows a live vote widget, the leaderboard and a winner reveal with confetti. |
+| **`/overlay`** | Transparent OBS browser source. Memes pop in with their number and requester and queue up if several arrive at once. Also shows the vote choices, a live vote widget, the leaderboard and a winner reveal with confetti. |
 | **`/twitch`** | Sign in with Twitch, add an optional bot account, create the "Make a Meme" channel point reward, and see the connection status. |
 | **`/demo`** | Fake Twitch chat and channel point redemptions, with an overlay preview. Test everything without going live. |
 
@@ -131,10 +131,14 @@ Open **/mod** on a second screen, or give your mods the link if they're on the s
 ### Meme of the Stream
 
 1. Near the end of stream, click **Open voting** on /mod.
-   - Chat votes with `!vote <number>`. The number is shown on every meme on stream.
-   - Viewer memes approved in the last `VOTE_WINDOW_HOURS` hours are in the running.
+   - Viewer memes approved in the last `VOTE_WINDOW_HOURS` hours are in the running. Voting won't open until there's at least one.
+   - Opening voting shows every choice with its number on the overlay, and the bot lists them in chat.
+   - Chat votes with `!vote <number>`, or viewers tap **Vote** on the viewers' site.
    - Each viewer gets one vote and can change it.
-2. While voting is open, a small top-3 widget shows live on the overlay. **Show leaderboard on stream** shows the full top 5.
+2. While voting is open:
+   - A small top-3 widget shows live on the overlay.
+   - The choices card comes back every couple of minutes. **Show choices on stream** brings it up right away.
+   - **Show leaderboard on stream** shows the full top 5.
 3. **Close & crown winner** shows the winning meme with a crown and confetti, and the bot announces it in chat.
 
 ### Guard rails

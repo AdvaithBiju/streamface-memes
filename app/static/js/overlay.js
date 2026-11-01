@@ -1,9 +1,10 @@
-// OBS overlay: plays approved memes, the vote leaderboard and the winner reveal
-// one at a time, plus a small live vote widget while voting is open.
+// OBS overlay: plays approved memes, the vote choices, the leaderboard and the
+// winner reveal one at a time, plus a small live vote widget while voting is open.
 const params = new URLSearchParams(location.search);
 const pos = ["left", "right", "center"].includes(params.get("pos")) ? params.get("pos") : "center";
 const secondsOverride = parseFloat(params.get("seconds"));
 const showVoteWidget = params.get("votes") !== "0";
+const CHOICES_EVERY_MS = 2 * 60 * 1000; // re-show the vote choices while voting is open
 document.body.classList.add("pos-" + pos);
 if (params.has("preview")) document.body.classList.add("preview");
 
@@ -72,6 +73,22 @@ async function leaderboardCard(data) {
   return card;
 }
 
+async function choicesCard(data) {
+  const card = el("div", "card choices");
+  card.append(el("div", "board-title", "🏆 Vote for Meme of the Stream!"));
+  const grid = el("div", "choice-grid" + (data.choices.length > 6 ? " many" : ""));
+  const images = await Promise.all(data.choices.map((m) => loadImage(m.url).catch(() => el("div"))));
+  for (const [i, m] of data.choices.entries()) {
+    const cell = el("div", "choice");
+    cell.append(el("div", "choice-num", `#${m.id}`), images[i], el("div", "choice-who", m.requested_by));
+    grid.append(cell);
+  }
+  card.append(grid);
+  const more = data.total > data.choices.length ? ` (+${data.total - data.choices.length} older)` : "";
+  card.append(el("div", "board-hint", `Type !vote <number> in chat${more}`), el("div", "timer"));
+  return card;
+}
+
 async function winnerCard(w) {
   const card = el("div", "card winner");
   card.append(el("div", "crown", "👑"), el("div", "winner-title", "Meme of the Stream"));
@@ -111,6 +128,7 @@ async function playNext() {
   try {
     card = item.kind === "winner" ? await winnerCard(item)
       : item.kind === "leaderboard" ? await leaderboardCard(item)
+      : item.kind === "choices" ? await choicesCard(item)
       : await memeCard(item);
   } catch {
     current = null;
@@ -139,7 +157,9 @@ async function playNext() {
 // ------------------------------------------------------------------ live vote widget
 
 const widget = document.getElementById("vote-widget");
+let voting = { open: false, candidates: [] };
 function renderWidget(s) {
+  voting = s;
   widget.hidden = !(showVoteWidget && s.open);
   if (widget.hidden) return;
   const list = el("ol");
@@ -147,8 +167,18 @@ function renderWidget(s) {
     list.append(el("li", "", `#${m.id} ${m.requested_by}: ${m.votes}`));
   }
   widget.replaceChildren(el("div", "vw-title", "🏆 !vote <number>"), list);
-  if (!s.leaderboard.length) widget.append(el("div", "vw-empty", "No votes yet"));
+  if (!s.leaderboard.length) {
+    const nums = (s.candidates || []).map((m) => `#${m.id}`).join("  ");
+    widget.append(el("div", "vw-empty", nums ? `Choices: ${nums}` : "No votes yet"));
+  }
 }
+
+// While voting runs, bring the choices back now and then (only when nothing else is playing).
+setInterval(() => {
+  if (voting.open && voting.candidates?.length && !current && !queue.length) {
+    enqueue({ kind: "choices", choices: voting.candidates.slice(-12), total: voting.candidates.length, seconds: 15 });
+  }
+}, CHOICES_EVERY_MS);
 
 // ------------------------------------------------------------------ wiring
 
@@ -172,6 +202,7 @@ socket.on("disconnect", () => { conn.hidden = false; });
 socket.on("show_meme", (m) => enqueue({ ...m, kind: "meme" }));
 socket.on("show_leaderboard", (d) => enqueue({ ...d, kind: "leaderboard" }));
 socket.on("show_winner", (w) => enqueue({ ...w, kind: "winner" }));
+socket.on("show_choices", (d) => enqueue({ ...d, kind: "choices" }));
 socket.on("voting_updated", renderWidget);
 
 // Don't depend on the socket alone: fetch on load and poll as a fallback.

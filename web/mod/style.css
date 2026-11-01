@@ -116,6 +116,8 @@ button.danger { color: var(--error); border-color: var(--error); }
 .history-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .history-row button { padding: 5px 10px; font-size: 0.8rem; }
 
+.vote-board-title { margin: 14px 0 0; font-size: 0.95rem; }
+.vote-board-title:empty { display: none; }
 .vote-board { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 6px; counter-reset: rank; }
 .vote-board li { display: flex; align-items: center; gap: 10px; background: var(--panel); border-radius: 6px; padding: 6px 10px; counter-increment: rank; }
 .vote-board li::before { content: counter(rank); color: var(--muted); font-weight: 700; }

@@ -146,3 +146,8 @@ button.danger { color: var(--error); }
   paint-order: stroke fill; outline: none;
 }
 .inline-text::placeholder { color: rgba(255, 255, 255, 0.55); -webkit-text-stroke: 0; }
+
+/* Meme of the Stream voting */
+.vote-card { border: 2px solid #ffe066; }
+.meme.voted { outline: 3px solid #ffe066; }
+.vote-card figcaption button { margin-left: auto; }

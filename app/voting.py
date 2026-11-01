@@ -6,7 +6,7 @@ again changes the vote). Closing the round crowns the winner on the overlay.
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from flask import current_app
 
@@ -15,6 +15,8 @@ from .extensions import socketio
 from .pipeline import RequestRefused, say
 
 LEADERBOARD_SIZE = 5
+MAX_CHOICES = 12        # memes shown on the overlay's "vote now" card
+CHAT_LIMIT = 480        # Twitch messages max out at 500 characters
 SQL_TIME = "%Y-%m-%d %H:%M:%S"  # format of datetime('now') in the database
 
 
@@ -23,14 +25,28 @@ def current_round():
         "SELECT * FROM vote_rounds WHERE closed_at IS NULL ORDER BY id DESC LIMIT 1").fetchone()
 
 
+def _since(round_row=None) -> str:
+    opened = datetime.strptime(round_row["opened_at"], SQL_TIME) if round_row else datetime.now(timezone.utc)
+    return (opened - timedelta(hours=current_app.config["VOTE_WINDOW_HOURS"])).strftime(SQL_TIME)
+
+
+ELIGIBLE = "status IN ('approved', 'shown') AND requested_by != 'streamer' AND decided_at >= ?"
+
+
 def _eligible(round_row, meme_id: int):
-    opened = datetime.strptime(round_row["opened_at"], SQL_TIME)
-    since = (opened - timedelta(hours=current_app.config["VOTE_WINDOW_HOURS"])).strftime(SQL_TIME)
-    return get_db().execute(
-        "SELECT * FROM memes WHERE id = ? AND status IN ('approved', 'shown') "
-        "AND requested_by != 'streamer' AND decided_at >= ?",
-        (meme_id, since),
-    ).fetchone()
+    return get_db().execute(f"SELECT * FROM memes WHERE id = ? AND {ELIGIBLE}",
+                            (meme_id, _since(round_row))).fetchone()
+
+
+def candidates(round_row=None) -> list[dict]:
+    """Memes in the running for this round (or for a round opened now), with their votes."""
+    rows = get_db().execute(
+        f"SELECT m.id, m.filename, m.requested_by, "
+        f"(SELECT COUNT(*) FROM votes v WHERE v.round_id = ? AND v.meme_id = m.id) AS votes "
+        f"FROM memes m WHERE {ELIGIBLE} ORDER BY m.id",
+        (round_row["id"] if round_row else 0, _since(round_row))).fetchall()
+    return [{"id": r["id"], "url": f"/generated/{r['filename']}", "requested_by": r["requested_by"],
+             "votes": r["votes"]} for r in rows]
 
 
 def leaderboard(round_id: int, limit: int = LEADERBOARD_SIZE) -> list[dict]:
@@ -47,26 +63,59 @@ def state() -> dict:
     db = get_db()
     row = current_round() or db.execute("SELECT * FROM vote_rounds ORDER BY id DESC LIMIT 1").fetchone()
     if row is None:
-        return {"open": False, "round_id": None, "leaderboard": [], "total_votes": 0, "winner_id": None}
+        return {"open": False, "round_id": None, "leaderboard": [], "total_votes": 0, "winner_id": None,
+                "candidates": candidates()}
+    is_open = row["closed_at"] is None
     total = db.execute("SELECT COUNT(*) FROM votes WHERE round_id = ?", (row["id"],)).fetchone()[0]
-    return {"open": row["closed_at"] is None, "round_id": row["id"], "leaderboard": leaderboard(row["id"]),
-            "total_votes": total, "winner_id": row["winner_meme_id"]}
+    return {"open": is_open, "round_id": row["id"], "leaderboard": leaderboard(row["id"]),
+            "total_votes": total, "winner_id": row["winner_meme_id"],
+            # Open round: what chat can vote for. Closed: what the next round would have.
+            "candidates": candidates(row if is_open else None)}
 
 
 def _broadcast() -> None:
     socketio.emit("voting_updated", state())
 
 
+def choices_message(memes: list[dict]) -> str:
+    """Chat line listing the choices, cut to fit one Twitch message."""
+    msg = "🏆 Meme of the Stream voting is open! Vote with"
+    for i, m in enumerate(memes):
+        part = f" !vote {m['id']} ({m['requested_by']}),"
+        more = f" … +{len(memes) - i} more on stream"
+        if len(msg) + len(part) + len(more) > CHAT_LIMIT and i < len(memes) - 1:
+            return msg.rstrip(",") + more
+        msg += part
+    return msg.rstrip(",")
+
+
 def open_round() -> dict:
     if current_round() is not None:
         raise RequestRefused("Voting is already open.")
+    if not candidates():
+        hours = current_app.config["VOTE_WINDOW_HOURS"]
+        raise RequestRefused(f"Nothing to vote on yet: approve some viewer memes first "
+                             f"(memes approved in the last {hours}h count).")
     db = get_db()
     db.execute("INSERT INTO vote_rounds DEFAULT VALUES")
     db.commit()
     _broadcast()
-    say("🏆 Meme of the Stream voting is open! Type !vote <number> for your favourite meme "
-        "(the number is shown on each meme).")
+    memes = candidates(current_round())
+    say(choices_message(memes))
+    _emit_choices(memes)
     return state()
+
+
+def _emit_choices(memes: list[dict]) -> None:
+    socketio.emit("show_choices", {"choices": memes[-MAX_CHOICES:], "total": len(memes),
+                                   "seconds": current_app.config["OVERLAY_SECONDS"] + 7})
+
+
+def show_choices() -> None:
+    round_row = current_round()
+    if round_row is None:
+        raise RequestRefused("Voting isn't open.")
+    _emit_choices(candidates(round_row))
 
 
 def vote(user: str, meme_ref: str) -> None:

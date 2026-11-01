@@ -29,12 +29,14 @@
     <div class="mod-side">
       <section class="card" id="voting-card">
         <h2>🏆 Meme of the Stream <span id="vote-state" class="badge">closed</span></h2>
-        <p class="muted small">Open voting near the end of stream. Chat types <code>!vote &lt;number&gt;</code> for viewer memes approved in the last {{ vote_hours }}h (the number is shown on stream).</p>
+        <p class="muted small">Open voting near the end of stream. Chat types <code>!vote &lt;number&gt;</code> for viewer memes approved in the last {{ vote_hours }}h (opening voting shows the choices on stream and in chat).</p>
         <div class="buttons">
           <button type="button" id="vote-open">Open voting</button>
+          <button type="button" class="ghost" id="vote-choices">Show choices on stream</button>
           <button type="button" class="ghost" id="vote-show">Show leaderboard on stream</button>
           <button type="button" class="approve" id="vote-close">Close &amp; crown winner</button>
         </div>
+        <h3 id="vote-board-title" class="vote-board-title"></h3>
         <ol id="vote-board" class="vote-board"></ol>
         <p id="vote-total" class="muted small"></p>
       </section>

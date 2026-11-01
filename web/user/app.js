@@ -27,6 +27,8 @@ let me = null;
 let popular = null;
 let cooldownUntil = 0;
 let mineTimer = null;
+let voteTimer = null;
+let lastVoting = "";
 let stream = null;
 let editing = null;   // the text layer being typed into on the meme
 let lastTap = { time: 0, x: 0, y: 0 };
@@ -76,6 +78,7 @@ function signOut() {
   token = null;
   try { localStorage.removeItem("sf_token"); } catch { /* ignore */ }
   clearTimeout(mineTimer);
+  clearTimeout(voteTimer);
   stopCamera();
   $("maker").hidden = true;
   $("who").hidden = true;
@@ -884,6 +887,62 @@ async function loadMine() {
   mineTimer = setTimeout(loadMine, list.some((m) => m.status === "pending" || m.status === "approved") ? 5000 : 30000);
 }
 
+// ---------------------------------------------------------------- Meme of the Stream voting
+
+function myVote(roundId) {
+  try { return Number(localStorage.getItem(`sf_vote_${roundId}`)) || null; } catch { return null; }
+}
+
+async function loadVoting() {
+  clearTimeout(voteTimer);
+  if (!token) return;
+  try {
+    renderVoting(await api("/api/voting"));
+  } catch { /* try again on the next poll */ }
+  voteTimer = setTimeout(loadVoting, 10000);
+}
+
+function renderVoting(v) {
+  const key = JSON.stringify([v.open, v.round_id, v.candidates]);
+  if (key === lastVoting) return;   // don't redraw the images on every poll
+  lastVoting = key;
+  $("vote-card").hidden = !v.open || !v.candidates.length;
+  if ($("vote-card").hidden) return;
+  const mine = myVote(v.round_id);
+  const box = $("vote-list");
+  box.replaceChildren();
+  for (const m of v.candidates) {
+    const card = el("figure", "meme" + (m.id === mine ? " voted" : ""));
+    const img = el("img");
+    img.src = API + m.url;
+    img.alt = `Meme #${m.id} by ${m.requested_by}`;
+    img.loading = "lazy";
+    const cap = el("figcaption");
+    const who = el("span");
+    who.append(el("b", "", `#${m.id}`), ` ${m.requested_by}`);
+    const button = el("button", m.id === mine ? "small" : "ghost small", m.id === mine ? "Voted ✓" : "Vote");
+    button.type = "button";
+    button.onclick = () => castVote(v.round_id, m.id, button);
+    cap.append(who, el("span", "muted", `${m.votes} vote${m.votes === 1 ? "" : "s"}`), button);
+    card.append(img, cap);
+    box.append(card);
+  }
+}
+
+async function castVote(roundId, memeId, button) {
+  button.disabled = true;
+  try {
+    const v = await postJSON("/api/viewer/vote", { meme_id: memeId });
+    try { localStorage.setItem(`sf_vote_${roundId}`, String(memeId)); } catch { /* storage blocked */ }
+    setStatus(`You voted for #${memeId}!`, "ok", "vote-status");
+    lastVoting = "";
+    renderVoting(v);
+  } catch (err) {
+    setStatus(err.message, "error", "vote-status");
+    button.disabled = false;
+  }
+}
+
 // ---------------------------------------------------------------- start
 
 $("sign-in").onclick = () => { location.href = `${API}/auth/login?site=user`; };
@@ -909,6 +968,7 @@ async function start() {
     showError(err.message);
   }
   loadMine();
+  loadVoting();
   loadPopular();
 }
 
