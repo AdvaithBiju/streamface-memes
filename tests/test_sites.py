@@ -1,5 +1,6 @@
 """The online setup: password-protected streamer pages, and the viewer and mod sites' APIs."""
 import base64
+import io
 import urllib.parse
 
 import pytest
@@ -36,42 +37,96 @@ def test_streamer_pages_need_the_password(client, online):
     assert client.post("/api/voting/open").status_code == 401
 
 
+FACE = {"type": "face", "face_id": 1, "x": 150, "y": 40, "width": 100, "height": 130}
+
+
+def text(t, x=10):
+    return {"type": "text", "text": t, "x": x, "y": 180, "width": 180, "height": 100, "size": 30}
+
+
+def meme(template="testmeme", *layers):
+    return {"template_id": template, "layers": list(layers) or [FACE, text("me at 3am"), text("still coding", 210)]}
+
+
 def test_viewer_makes_a_meme_on_the_site(client, app):
     assert client.post("/api/viewer/memes", json={}).status_code == 401
     alice = token(app, "alice", "viewer")
 
     templates = client.get("/api/viewer/templates", headers=alice).json
     assert [t["id"] for t in templates] == ["testmeme"] and len(templates[0]["captions"]) == 2
+    assert client.get("/api/viewer/faces", headers=alice).json == [
+        {"id": 1, "url": "/faces/face.png", "mine": False}]
+    assert client.get("/faces/face.png").status_code == 200   # the editor draws it
 
-    res = client.post("/api/viewer/memes", headers=alice,
-                      json={"template_id": "testmeme", "captions": ["me at 3am", "still coding"]})
+    res = client.post("/api/viewer/memes", headers=alice, json=meme())
     assert res.status_code == 201
-    meme = res.json
-    assert meme["status"] == "pending" and meme["source"] == "web" and meme["requested_by"] == "alice"
-    assert client.get("/api/queue").json["pending"][0]["id"] == meme["id"]
+    made = res.json
+    assert made["status"] == "pending" and made["source"] == "web" and made["requested_by"] == "alice"
+    assert made["caption"] == "me at 3am | still coding"
+    assert client.get("/api/queue").json["pending"][0]["id"] == made["id"]
 
-    again = client.post("/api/viewer/memes", headers=alice,
-                        json={"template_id": "testmeme", "captions": ["again"]})
+    again = client.post("/api/viewer/memes", headers=alice, json=meme())
     assert again.status_code == 409 and again.json["error"].startswith("slow down")
-    assert [m["id"] for m in client.get("/api/viewer/memes", headers=alice).json] == [meme["id"]]
+    assert [m["id"] for m in client.get("/api/viewer/memes", headers=alice).json] == [made["id"]]
 
     bob = token(app, "bob", "viewer")
-    for captions, error in ((["hi @someone"], "@mentions"), (["", ""], "at least one"),
-                            (["a", "b", "c"], "caption boxes")):
-        res = client.post("/api/viewer/memes", headers=bob, json={"template_id": "testmeme", "captions": captions})
-        assert res.status_code == 409 and error in res.json["error"], captions
+    for body, error in ((meme("testmeme", FACE, text("hi @someone")), "@mentions"),
+                        (meme("testmeme", FACE, text("go to evil.com")), "Links"),
+                        (meme("testmeme", text("no face")), "Add a face"),
+                        (meme("testmeme", {**FACE, "face_id": 99}), "isn't available"),
+                        (meme("nope", FACE), "Pick a meme"),
+                        ({"template_id": "testmeme", "layers": "x"}, "must be a list")):
+        res = client.post("/api/viewer/memes", headers=bob, json=body)
+        assert res.status_code == 409 and error in res.json["error"], body
+
+
+def test_viewer_face_screenshots(client, app, monkeypatch):
+    from app.routes import setup as setup_routes
+
+    def fake_cutout(detector, data, out_path):
+        if data == b"no face here":
+            raise setup_routes.FaceError("No face found. Try a well-lit, front-facing photo.")
+        out_path.write_bytes((app.config["FACES_DIR"] / "face.png").read_bytes())
+    monkeypatch.setattr(setup_routes, "process_photo", fake_cutout)
+    app.config["VIEWER_MAX_FACES"] = 2
+
+    alice, bob = token(app, "alice", "viewer"), token(app, "bob", "viewer")
+
+    def upload(who, data=b"screenshot", source="paste"):
+        return client.post("/api/viewer/faces", headers=who, content_type="multipart/form-data",
+                           data={"photo": (io.BytesIO(data), "shot.png"), "source": source})
+
+    res = upload(alice)
+    assert res.status_code == 201 and res.json["mine"] is True
+    face_id = res.json["id"]
+    assert upload(alice, b"no face here").json["error"].startswith("No face found")
+    assert upload(alice).status_code == 201
+    assert "up to 2" in upload(alice).json["error"]
+
+    # Alice's faces are hers: Bob can't see, use or delete them, and the streamer's pages don't list them.
+    assert [f["id"] for f in client.get("/api/viewer/faces", headers=bob).json] == [1]
+    assert len(client.get("/api/viewer/faces", headers=alice).json) == 3
+    assert client.get("/api/faces").json[0]["id"] == 1 and len(client.get("/api/faces").json) == 1
+    used = meme("testmeme", {**FACE, "face_id": face_id}, text("hello"))
+    assert "isn't available" in client.post("/api/viewer/memes", headers=bob, json=used).json["error"]
+    assert client.delete(f"/api/viewer/faces/{face_id}", headers=bob).status_code == 404
+    assert client.delete("/api/viewer/faces/1", headers=alice).status_code == 404   # the streamer's
+
+    assert client.post("/api/viewer/memes", headers=alice, json=used).status_code == 201
+    assert client.delete(f"/api/viewer/faces/{face_id}", headers=alice).json == {"ok": True}
+    assert len(client.get("/api/viewer/faces", headers=alice).json) == 2
 
 
 def test_only_mods_can_moderate(client, online):
-    meme = client.post("/api/viewer/memes", headers=token(online, "alice", "viewer"),
-                       json={"template_id": "testmeme", "captions": ["hello"]}).json
+    meme_ = client.post("/api/viewer/memes", headers=token(online, "alice", "viewer"),
+                        json=meme("testmeme", FACE, text("hello"))).json
     viewer = token(online, "alice", "viewer")
-    assert client.post(f"/api/memes/{meme['id']}/approve", headers=viewer).status_code == 403
+    assert client.post(f"/api/memes/{meme_['id']}/approve", headers=viewer).status_code == 403
     assert client.get("/api/queue", headers=viewer).status_code == 403
 
     mod = token(online, "modkate", "mod")
-    assert client.get("/api/queue", headers=mod).json["pending"][0]["id"] == meme["id"]
-    approved = client.post(f"/api/memes/{meme['id']}/approve", headers=mod, json={"mod": "spoofed"}).json
+    assert client.get("/api/queue", headers=mod).json["pending"][0]["id"] == meme_["id"]
+    approved = client.post(f"/api/memes/{meme_['id']}/approve", headers=mod, json={"mod": "spoofed"}).json
     assert approved["status"] == "approved" and approved["decided_by"] == "modkate"
     assert client.post("/api/voting/open", headers=mod).json["open"] is True
     # A mod token doesn't unlock the streamer pages.

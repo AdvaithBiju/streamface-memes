@@ -25,7 +25,7 @@ from . import storage
 from .db import get_db
 from .extensions import socketio
 from .filters import CaptionError, clean_caption
-from .meme import layers_from_template, render_meme
+from .meme import MemeError, layers_from_template, parse_layers, render_meme
 
 CAPTION_SPLIT_RE = re.compile(r"\s+vs\.?\s+|\s*\|\s*", re.I)
 
@@ -144,36 +144,58 @@ def request_meme(user: str, template_query: str, caption: str, source: str,
     return meme_json(row)
 
 
-def submit_web_meme(user: str, template_id: str, captions: list) -> dict:
-    """A meme from the viewers' website: one caption per caption box."""
+def submit_web_meme(user: str, template_id: str, raw_layers) -> dict:
+    """A meme laid out in the viewers' website editor: faces and text boxes placed by hand.
+
+    Viewers can use the streamer's faces and the face cutouts they uploaded themselves.
+    """
+    cfg = current_app.config
     template = current_app.extensions["template_store"].get(str(template_id))
-    if template is None or not template.get("face_slots"):
+    if template is None:
         raise RequestRefused("Pick a meme template first.")
-    slots = len(template.get("captions", []))
-    if not isinstance(captions, list) or len(captions) > slots:
-        raise RequestRefused("That doesn't match the template's caption boxes.")
-    cleaned = []
-    for text in captions:
+    try:
+        layers = parse_layers(raw_layers, template["width"], template["height"])
+    except MemeError as exc:
+        raise RequestRefused(str(exc))
+
+    rows = get_db().execute("SELECT id, filename FROM faces WHERE owner IS NULL OR owner = ?",
+                            ((user or "").lower(),)).fetchall()
+    face_paths = {r["id"]: cfg["FACES_DIR"] / r["filename"] for r in rows}
+    faces = [l for l in layers if l["type"] == "face"]
+    if not faces:
+        raise RequestRefused("Add a face to your meme.")
+    if any(l["face_id"] not in face_paths for l in faces):
+        raise RequestRefused("One of those faces isn't available any more. Pick another one.")
+
+    captions = []
+    for layer in layers:
+        if layer["type"] != "text" or not layer["text"].strip():
+            continue
         try:
-            cleaned.append(clean_caption(str(text or ""), current_app.config["CAPTION_MAX_LENGTH"]))
+            clean_caption(layer["text"], cfg["CAPTION_MAX_LENGTH"])   # whole box: length, @, links, language
+            lines = [clean_caption(line, cfg["CAPTION_MAX_LENGTH"]) for line in layer["text"].split("\n")]
         except CaptionError as exc:
             raise RequestRefused(f"{str(exc)[0].upper()}{str(exc)[1:]}.")
-    cleaned += [""] * (slots - len(cleaned))
-    if not any(cleaned):
-        raise RequestRefused("Write at least one caption.")
-    return meme_json(_queue_meme(user, template, cleaned, " | ".join(c for c in cleaned if c), "web"))
+        layer["text"] = "\n".join(line for line in lines if line)
+        captions.append(" ".join(layer["text"].split()))
+    return meme_json(_queue_meme(user, template, [], " | ".join(captions), "web",
+                                 layers=layers, face_paths=face_paths))
 
 
 def _queue_meme(user: str, template: dict, captions: list[str], caption_text: str, source: str,
-                redemption: dict | None = None):
-    """Cooldown + queue checks, render with a random face, store as pending."""
+                redemption: dict | None = None, layers: list[dict] | None = None,
+                face_paths: dict | None = None):
+    """Cooldown + queue checks, render, store as pending.
+
+    Without layers the template's face slots get one of the streamer's faces at random.
+    """
     cfg = current_app.config
     user = (user or "viewer").strip()[:40]
     key = user.lower()
 
     db = get_db()
-    faces = db.execute("SELECT id, filename FROM faces").fetchall()
-    if not faces:
+    faces = db.execute("SELECT id, filename FROM faces WHERE owner IS NULL").fetchall()
+    if layers is None and not faces:
         raise RequestRefused("Memes aren't set up yet. The streamer needs to add their face first.")
 
     with _lock:
@@ -186,10 +208,12 @@ def _queue_meme(user: str, template: dict, captions: list[str], caption_text: st
         _cooldowns[key] = time.time()
 
     try:
-        face = random.choice(faces)  # streamers with several photos get some variety
-        layers = layers_from_template(template, face["id"], captions)
+        if layers is None:
+            face = random.choice(faces)  # streamers with several photos get some variety
+            layers = layers_from_template(template, face["id"], captions)
+            face_paths = {face["id"]: cfg["FACES_DIR"] / face["filename"]}
         image = render_meme(current_app.extensions["template_store"].image_path(template), layers,
-                            {face["id"]: cfg["FACES_DIR"] / face["filename"]})
+                            face_paths)
         filename = f"{uuid.uuid4().hex}.png"
         image.save(cfg["GENERATED_DIR"] / filename, optimize=True)
         storage.save(cfg["GENERATED_DIR"] / filename)

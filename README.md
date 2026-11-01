@@ -7,10 +7,10 @@ A viewer types `!meme drake homework vs gaming` in chat or redeems channel point
 Built for the **Codex x TwitchCon Hackathon**.
 
 ### Ground rules
-- **Only the streamer's face**, uploaded by the streamer. Viewers can't upload faces.
+- **The streamer's face**, uploaded by the streamer. On the viewers' site, viewers can also add face screenshots of their own; those stay private to that viewer and are never used for chat memes.
 - **Cut-and-paste cartoon style**: a soft-edged oval cutout pasted onto the meme, *not* a realistic deepfake.
 - **Every viewer meme goes through a mod** before it appears on stream.
-- **Viewers only add a short caption**, which has to pass a length, link, @mention and profanity filter.
+- **Every caption has to pass** a length, link and @mention check. There's no language filter; mods decide what's OK.
 
 ---
 
@@ -29,7 +29,7 @@ Built for the **Codex x TwitchCon Hackathon**.
 
 | Site | What it does |
 |---|---|
-| **Viewers' site** (`web/user`) | Viewers sign in with Twitch, pick a template, write captions with a live preview, and send the meme for approval. They can see whether each of their memes was approved. |
+| **Viewers' site** (`web/user`) | Viewers sign in with Twitch and get the same drag-and-drop editor as `/editor`: built-in or top-100 Imgflip templates, the streamer's face or a face screenshot they add (upload, paste with Ctrl+V, or webcam; the face is cut out automatically), and text they can move, resize and rotate. The meme goes to the mods for approval, and viewers can see whether each one was approved. |
 | **Mods' site** (`web/mod`) | The streamer and their Twitch mods sign in to approve or reject memes and run Meme of the Stream from any device. Other accounts are refused. |
 
 ---
@@ -142,7 +142,8 @@ Open **/mod** on a second screen, or give your mods the link if they're on the s
 Every viewer meme passes through these checks:
 - **Per-viewer cooldown.**
 - **Queue limit** on memes waiting for approval.
-- **Caption limits:** a length cap, and captions with links, @mentions or profanity are refused.
+- **Caption limits:** a length cap, and captions with links or @mentions are refused.
+- **Face screenshots:** only pictures with a detectable face are accepted, each viewer can keep up to 5, and nobody else can see or use them.
 - **Bot replies:** the bot tells the viewer why a meme was refused, and when it's queued, approved or rejected.
 
 ---
@@ -228,7 +229,7 @@ app/
   pipeline.py        request -> filter/cooldown -> render -> approve -> overlay
   commands.py        !meme / !memes / !vote / channel point handling
   voting.py          Meme of the Stream rounds, votes, winner
-  filters.py         caption filter (length, links, @mentions, profanity)
+  filters.py         caption filter (length, links, @mentions)
   twitch.py          Twitch sign-in, EventSub WebSocket, chat replies, redemptions
   net.py             shared HTTPS settings
   extensions.py      Socket.IO

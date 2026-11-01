@@ -1,4 +1,4 @@
-"""Backend for the two Vercel sites: Twitch sign-in, and the viewer meme API.
+"""Backend for the two Vercel sites: Twitch sign-in, and the viewer meme editor API.
 
 The mod site uses the existing mod API (/api/queue, approve, reject, voting);
 app/auth.py lets signed-in mods through.
@@ -12,6 +12,7 @@ from .. import pipeline
 from ..auth import make_token
 from ..db import get_db
 from ..twitch import TwitchError
+from . import editor, setup
 
 bp = Blueprint("sites", __name__)
 
@@ -86,10 +87,59 @@ def me():
 
 @bp.get("/api/viewer/templates")
 def viewer_templates():
-    """Templates with a face slot, as viewers' memes always include the streamer."""
     keep = ("id", "name", "width", "height", "face_slots", "captions")
     return jsonify([{**{k: t.get(k) for k in keep}, "url": f"/template-images/{t['id']}"}
-                    for t in current_app.extensions["template_store"].all() if t.get("face_slots")])
+                    for t in current_app.extensions["template_store"].all()])
+
+
+@bp.get("/api/viewer/popular")
+def viewer_popular():
+    return editor.imgflip_list()
+
+
+@bp.post("/api/viewer/popular/import")
+def viewer_popular_import():
+    return editor.imgflip_import()
+
+
+def _viewer_face_json(row) -> dict:
+    return {"id": row["id"], "url": f"/faces/{row['filename']}", "mine": row["owner"] is not None}
+
+
+@bp.get("/api/viewer/faces")
+def viewer_faces():
+    """The streamer's faces, then the face screenshots this viewer uploaded."""
+    rows = get_db().execute(
+        "SELECT * FROM faces WHERE owner IS NULL OR owner = ? ORDER BY owner IS NOT NULL, id",
+        (g.user["login"].lower(),)).fetchall()
+    return jsonify([_viewer_face_json(r) for r in rows])
+
+
+@bp.post("/api/viewer/faces")
+def viewer_add_face():
+    f = request.files.get("photo")
+    if not f or not f.filename:
+        return jsonify(error="No picture received."), 400
+    owner = g.user["login"].lower()
+    limit = current_app.config["VIEWER_MAX_FACES"]
+    count = get_db().execute("SELECT COUNT(*) FROM faces WHERE owner = ?", (owner,)).fetchone()[0]
+    if count >= limit:
+        return jsonify(error=f"You can keep up to {limit} faces. Delete one first."), 400
+    source = request.form.get("source") if request.form.get("source") in ("webcam", "paste") else "upload"
+    rows, errors = setup.save_faces([f], source, owner)
+    if not rows:
+        return jsonify(error=errors[0]), 422
+    return jsonify(_viewer_face_json(rows[0])), 201
+
+
+@bp.delete("/api/viewer/faces/<int:face_id>")
+def viewer_delete_face(face_id: int):
+    row = get_db().execute("SELECT id, filename FROM faces WHERE id = ? AND owner = ?",
+                           (face_id, g.user["login"].lower())).fetchone()
+    if row is None:
+        return jsonify(error="Not found."), 404
+    setup.delete_face_row(row)
+    return jsonify(ok=True)
 
 
 @bp.post("/api/viewer/memes")
@@ -97,7 +147,7 @@ def viewer_submit():
     body = request.get_json(silent=True) or {}
     login = g.user["login"]
     try:
-        meme = pipeline.submit_web_meme(login, body.get("template_id", ""), body.get("captions"))
+        meme = pipeline.submit_web_meme(login, body.get("template_id", ""), body.get("layers"))
     except pipeline.RequestRefused as exc:
         return jsonify(error=str(exc).removeprefix(f"@{login} ")), 409
     return jsonify(meme), 201

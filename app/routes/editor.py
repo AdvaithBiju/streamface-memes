@@ -22,7 +22,7 @@ def _template_json(t: dict) -> dict:
 
 
 def _face_paths() -> dict:
-    rows = get_db().execute("SELECT id, filename FROM faces").fetchall()
+    rows = get_db().execute("SELECT id, filename FROM faces WHERE owner IS NULL").fetchall()
     faces_dir = current_app.config["FACES_DIR"]
     return {r["id"]: faces_dir / r["filename"] for r in rows}
 

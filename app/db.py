@@ -15,7 +15,7 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS faces (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     filename    TEXT NOT NULL UNIQUE,
-    source      TEXT NOT NULL,          -- 'upload' or 'webcam'
+    source      TEXT NOT NULL,          -- 'upload', 'webcam' or 'paste'
     created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -57,6 +57,9 @@ CREATE TABLE IF NOT EXISTS files (
 
 # Columns added after the first release; init_db adds any that are missing.
 MIGRATIONS = {
+    "faces": [
+        ("owner", "TEXT"),   # NULL = the streamer's face; otherwise the viewer's Twitch login
+    ],
     "memes": [
         ("source", "TEXT NOT NULL DEFAULT 'editor'"),   # editor | chat | channel_points | demo | web
         ("decided_by", "TEXT"),

@@ -30,8 +30,42 @@ def setup_page():
 
 @bp.get("/api/faces")
 def list_faces():
-    rows = get_db().execute("SELECT * FROM faces ORDER BY id").fetchall()
+    rows = get_db().execute("SELECT * FROM faces WHERE owner IS NULL ORDER BY id").fetchall()
     return jsonify([_face_json(r) for r in rows])
+
+
+def save_faces(files, source: str, owner: str | None) -> tuple[list, list[str]]:
+    """Cut the face out of each photo and store it. Returns (new rows, error messages)."""
+    db = get_db()
+    detector = current_app.extensions["face_detector"]
+    created, errors = [], []
+    for f in files:
+        filename = f"{uuid.uuid4().hex}.png"
+        try:
+            process_photo(detector, f.read(), current_app.config["FACES_DIR"] / filename)
+            storage.save(current_app.config["FACES_DIR"] / filename)
+        except FaceError as exc:
+            errors.append(f"{f.filename}: {exc}" if len(files) > 1 else str(exc))
+            continue
+        cur = db.execute("INSERT INTO faces (filename, source, owner) VALUES (?, ?, ?)",
+                         (filename, source, owner))
+        created.append(cur.lastrowid)
+    db.commit()
+    rows = db.execute(
+        f"SELECT * FROM faces WHERE id IN ({','.join('?' * len(created))})", created
+    ).fetchall() if created else []
+    return rows, errors
+
+
+def delete_face_row(row) -> None:
+    db = get_db()
+    db.execute("DELETE FROM faces WHERE id = ?", (row["id"],))
+    db.commit()
+    storage.delete(current_app.config["FACES_DIR"] / row["filename"])
+    try:
+        (current_app.config["FACES_DIR"] / row["filename"]).unlink(missing_ok=True)
+    except OSError as exc:  # e.g. Windows file lock while the image is being served
+        current_app.logger.warning("Could not delete %s: %s", row["filename"], exc)
 
 
 @bp.post("/api/faces")
@@ -41,47 +75,23 @@ def upload_faces():
         return jsonify(error="No photo received."), 400
 
     source = "webcam" if request.form.get("source") == "webcam" else "upload"
-    db = get_db()
-    count = db.execute("SELECT COUNT(*) FROM faces").fetchone()[0]
+    count = get_db().execute("SELECT COUNT(*) FROM faces WHERE owner IS NULL").fetchone()[0]
     max_faces = current_app.config["MAX_FACES"]
     if count + len(files) > max_faces:
         return jsonify(error=f"You can keep up to {max_faces} faces. "
                              f"Delete one first ({count} saved)."), 400
 
-    detector = current_app.extensions["face_detector"]
-    created, errors = [], []
-    for f in files:
-        filename = f"{uuid.uuid4().hex}.png"
-        try:
-            process_photo(detector, f.read(), current_app.config["FACES_DIR"] / filename)
-            storage.save(current_app.config["FACES_DIR"] / filename)
-        except FaceError as exc:
-            errors.append(f"{f.filename}: {exc}")
-            continue
-        cur = db.execute("INSERT INTO faces (filename, source) VALUES (?, ?)", (filename, source))
-        created.append(cur.lastrowid)
-    db.commit()
-
-    rows = db.execute(
-        f"SELECT * FROM faces WHERE id IN ({','.join('?' * len(created))})", created
-    ).fetchall() if created else []
-    status = 201 if created else 422
-    return jsonify(created=[_face_json(r) for r in rows], errors=errors), status
+    rows, errors = save_faces(files, source, None)
+    return jsonify(created=[_face_json(r) for r in rows], errors=errors), 201 if rows else 422
 
 
 @bp.delete("/api/faces/<int:face_id>")
 def delete_face(face_id: int):
-    db = get_db()
-    row = db.execute("SELECT filename FROM faces WHERE id = ?", (face_id,)).fetchone()
+    row = get_db().execute("SELECT id, filename FROM faces WHERE id = ? AND owner IS NULL",
+                           (face_id,)).fetchone()
     if row is None:
         return jsonify(error="Not found."), 404
-    db.execute("DELETE FROM faces WHERE id = ?", (face_id,))
-    db.commit()
-    storage.delete(current_app.config["FACES_DIR"] / row["filename"])
-    try:
-        (current_app.config["FACES_DIR"] / row["filename"]).unlink(missing_ok=True)
-    except OSError as exc:  # e.g. Windows file lock while the image is being served
-        current_app.logger.warning("Could not delete %s: %s", row["filename"], exc)
+    delete_face_row(row)
     return jsonify(ok=True)
 
 

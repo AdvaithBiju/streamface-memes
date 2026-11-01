@@ -29,7 +29,8 @@ class Config:
     # Extra Twitch logins allowed on the mod site, besides the streamer and their channel mods.
     MOD_LOGINS = {n.strip().lower() for n in os.getenv("MOD_LOGINS", "").split(",") if n.strip()}
 
-    MAX_FACES = 3
+    MAX_FACES = 3          # the streamer's own face photos
+    VIEWER_MAX_FACES = 5   # face screenshots each viewer can keep on the viewers' site
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 MB per request
 
     # Meme requests from chat / channel points

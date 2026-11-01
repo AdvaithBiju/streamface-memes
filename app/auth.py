@@ -25,6 +25,7 @@ PUBLIC = [
     re.compile(r"^/static/"),
     re.compile(r"^/socket\.io/"),
     re.compile(r"^/generated/"),
+    re.compile(r"^/faces/"),             # face cutouts, for the viewers' editor (random file names)
     re.compile(r"^/template-images/"),
     re.compile(r"^/api/overlay/queue$"),
     re.compile(r"^/api/memes/\d+/shown$"),

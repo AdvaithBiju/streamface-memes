@@ -20,7 +20,6 @@ def test_clean_caption_collapses_whitespace():
     ("visit www.spam-site.com", "links"),
     ("go to https://example.org", "links"),
     ("hi @someone", "@mentions"),
-    ("you are a b1tch", "language filter"),
 ])
 def test_clean_caption_refuses(text, reason):
     with pytest.raises(CaptionError, match=reason):

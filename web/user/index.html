@@ -23,29 +23,99 @@
   <main>
     <section id="signin" class="card hero" hidden>
       <h1>Put the streamer's face in a meme</h1>
-      <p class="muted">Pick a template, write the captions, and send it in. A mod checks it, then it pops up live on stream.</p>
+      <p class="muted">Pick a meme, drop in a face (or a screenshot of one), add your captions, and send it in. A mod checks it, then it pops up live on stream.</p>
       <button type="button" id="sign-in" class="big">Sign in with Twitch</button>
       <p class="muted small">We only see your Twitch username. No other permissions.</p>
     </section>
 
     <section id="maker" hidden>
+      <div class="card" id="faces-card">
+        <h2>1. Upload a screenshot of a face</h2>
+        <p class="muted small">Screenshot the stream (<kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>, then <kbd>Ctrl</kbd>+<kbd>V</kbd> here), upload a picture, or take a photo. The face is cut out automatically and added to your meme as a layer.</p>
+        <div class="buttons">
+          <label class="button-like big">Upload screenshot<input type="file" id="face-file" accept="image/*" class="visually-hidden"></label>
+          <button type="button" class="ghost" id="cam-start">Take photo</button>
+        </div>
+        <div id="cam" class="cam" hidden>
+          <video id="video" autoplay playsinline muted></video>
+          <div class="buttons">
+            <button type="button" id="cam-snap">Snap</button>
+            <button type="button" class="ghost" id="cam-stop">Cancel</button>
+          </div>
+        </div>
+        <p id="face-status" class="status" role="status"></p>
+        <h3 class="faces-title">Faces <span class="muted small">(tap one to add it to your meme)</span></h3>
+        <div id="faces" class="faces"></div>
+      </div>
+
       <div class="card">
-        <h2>1. Pick a meme</h2>
-        <div id="templates" class="templates"></div>
-        <p id="templates-empty" class="muted" hidden>No meme templates yet. Check back soon!</p>
+        <h2>2. Pick a meme</h2>
+        <div class="tabs" role="tablist">
+          <button type="button" class="tab active" data-tab="popular" role="tab">Popular memes</button>
+          <button type="button" class="tab" data-tab="templates" role="tab">Templates</button>
+        </div>
+        <div class="tab-panel" id="tab-popular">
+          <input type="search" id="popular-search" class="search" placeholder="Search popular memes…">
+          <div id="popular" class="templates"></div>
+        </div>
+        <div class="tab-panel" id="tab-templates" hidden>
+          <div id="templates" class="templates"></div>
+          <p id="templates-empty" class="muted" hidden>No meme templates yet. Try Popular memes.</p>
+        </div>
       </div>
 
       <div class="card editor" id="editor" hidden>
-        <div class="preview">
-          <canvas id="preview"></canvas>
-          <p class="muted small">Preview. The purple oval becomes the streamer's face.</p>
+        <div class="stage-col">
+          <div id="stage-box" class="stage-box">
+            <canvas id="stage"></canvas>
+            <textarea id="inline-text" class="inline-text" rows="1" hidden aria-label="Edit text"></textarea>
+          </div>
+          <p class="muted small hint"><b>Double-click text to edit it</b> · double-click empty space to add text · drag to move · round corner handle to resize · top handle to rotate</p>
         </div>
-        <div class="fields">
-          <h2>2. Write your captions</h2>
-          <div id="captions"></div>
-          <button type="button" id="submit" class="big">Send to the mods</button>
-          <p id="status" class="status" role="status"></p>
-          <p class="muted small">Keep it friendly: no links, no @mentions, nothing nasty. Mods have the final say.</p>
+
+        <div class="side">
+          <section>
+            <h2>3. Edit your meme</h2>
+            <button type="button" id="add-text" class="ghost">+ Add text</button>
+          </section>
+
+          <section>
+            <h2>Selected layer</h2>
+            <p id="no-selection" class="muted small">Tap a face or text on the meme to change it.</p>
+
+            <div id="face-panel" class="props" hidden>
+              <label>Face <select id="face-select"></select></label>
+              <label>Rotation <input type="range" data-prop="rotation" min="-180" max="180"></label>
+              <label class="check"><input type="checkbox" data-prop="flip"> Flip</label>
+            </div>
+
+            <div id="text-panel" class="props" hidden>
+              <label>Text <textarea id="text-input" data-prop="text" rows="2"></textarea></label>
+              <div class="two">
+                <label>Fill <input type="color" data-prop="color"></label>
+                <label>Outline <input type="color" data-prop="stroke"></label>
+              </div>
+              <label>Max size <input type="range" data-prop="size" min="12" max="160"></label>
+              <label>Rotation <input type="range" data-prop="rotation" min="-180" max="180"></label>
+              <label class="check"><input type="checkbox" data-prop="uppercase"> ALL CAPS</label>
+            </div>
+
+            <div id="layer-actions" class="buttons" hidden>
+              <button type="button" class="ghost small" id="layer-up">Forward</button>
+              <button type="button" class="ghost small" id="layer-down">Back</button>
+              <button type="button" class="ghost small" id="layer-dup">Duplicate</button>
+              <button type="button" class="ghost small danger" id="layer-del">Delete</button>
+            </div>
+          </section>
+
+          <section>
+            <div class="buttons">
+              <button type="button" id="submit" class="big">Send to the mods</button>
+              <button type="button" class="ghost" id="reset">Start over</button>
+            </div>
+            <p id="status" class="status" role="status"></p>
+            <p class="muted small">No links or @mentions. Mods have the final say.</p>
+          </section>
         </div>
       </div>
 
