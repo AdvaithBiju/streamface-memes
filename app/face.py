@@ -84,15 +84,27 @@ class FaceDetector:
 
     def detect(self, bgr: np.ndarray) -> Box | None:
         """Return the largest face in the image, or None."""
+        boxes = self.detect_all(bgr)
+        return boxes[0] if boxes else None
+
+    def detect_all(self, bgr: np.ndarray) -> list[Box]:
+        """Every face in the image, largest first."""
         if self._mp_detector is not None:
             rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-            image = self._mp.Image(image_format=self._mp.ImageFormat.SRGB, data=rgb)
-            result = self._mp_detector.detect(image)
-            boxes = [
-                Box(d.bounding_box.origin_x, d.bounding_box.origin_y,
-                    d.bounding_box.width, d.bounding_box.height)
-                for d in result.detections
-            ]
+            boxes = self._mp_boxes(rgb, 0, 0)
+            # The model squeezes the photo into a small square, so faces in a wide
+            # screenshot or group shot get too small to find. Also look at overlapping
+            # square tiles, full height and half height.
+            h, w = rgb.shape[:2]
+            for side in (min(h, w), min(h, w) // 2):
+                if side < 160:
+                    break
+                step = side // 2
+                for y in _offsets(h, side, step):
+                    for x in _offsets(w, side, step):
+                        tile = np.ascontiguousarray(rgb[y:y + side, x:x + side])
+                        boxes += self._mp_boxes(tile, x, y)
+            boxes = _dedupe(boxes)
         elif self._haar is not None:
             gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
             found = self._haar.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5,
@@ -101,9 +113,35 @@ class FaceDetector:
         else:
             raise FaceError("Face detection isn't working on the server right now. Please tell the streamer.")
 
-        if not boxes:
-            return None
-        return max(boxes, key=lambda b: b.w * b.h)
+        return sorted(boxes, key=lambda b: b.w * b.h, reverse=True)
+
+    def _mp_boxes(self, rgb: np.ndarray, dx: int, dy: int) -> list[Box]:
+        image = self._mp.Image(image_format=self._mp.ImageFormat.SRGB, data=rgb)
+        return [Box(d.bounding_box.origin_x + dx, d.bounding_box.origin_y + dy,
+                    d.bounding_box.width, d.bounding_box.height)
+                for d in self._mp_detector.detect(image).detections]
+
+
+def _offsets(length: int, side: int, step: int) -> list[int]:
+    """Tile start positions covering 0..length, the last one flush with the end."""
+    starts = list(range(0, max(1, length - side + 1), step))
+    if starts[-1] + side < length:
+        starts.append(length - side)
+    return starts
+
+
+def _dedupe(boxes: list[Box]) -> list[Box]:
+    """The same face found twice (whole photo + a tile): keep the bigger box."""
+    def overlap(a: Box, b: Box) -> float:
+        ix = max(0, min(a.x + a.w, b.x + b.w) - max(a.x, b.x))
+        iy = max(0, min(a.y + a.h, b.y + b.h) - max(a.y, b.y))
+        return ix * iy / min(a.w * a.h, b.w * b.h)
+
+    kept: list[Box] = []
+    for box in sorted(boxes, key=lambda b: b.w * b.h, reverse=True):
+        if all(overlap(box, k) < 0.4 for k in kept):
+            kept.append(box)
+    return kept
 
 
 def decode_image(data: bytes) -> np.ndarray:
@@ -156,15 +194,31 @@ def make_cutout(bgr: np.ndarray, box: Box) -> np.ndarray:
     return bgra
 
 
-def process_photo(detector: FaceDetector, data: bytes, out_path: Path) -> None:
-    """Full pipeline: raw upload bytes -> transparent PNG at out_path."""
+def process_photo(detector: FaceDetector, data: bytes, out_path: Path, max_faces: int = 1) -> list[Path]:
+    """Full pipeline: raw upload bytes -> transparent PNG at out_path.
+
+    With max_faces > 1, a group shot gives one cutout per person (largest
+    first): out_path, then <name>-2.png, <name>-3.png, ... Returns the paths written.
+    """
     bgr = decode_image(data)
-    box = detector.detect(bgr)
-    if box is None:
+    boxes = detector.detect_all(bgr)
+    if not boxes:
         raise FaceError("No face found. Try a well-lit, front-facing photo.")
-    if box.w < 40 or box.h < 40:
+    if boxes[0].w < 40 or boxes[0].h < 40:
         raise FaceError("Face is too small. Try a closer photo.")
-    cutout = make_cutout(bgr, box)
+    # Skip tiny faces in the background: usually posters, crowds or false hits.
+    keep = [b for b in boxes if b.w >= 40 and b.w >= boxes[0].w * 0.3][:max(1, max_faces)]
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    if not cv2.imwrite(str(out_path), cutout):
-        raise FaceError("Couldn't save the cutout.")
+    paths = []
+    for i, box in enumerate(keep):
+        path = out_path if i == 0 else out_path.with_name(f"{out_path.stem}-{i + 1}{out_path.suffix}")
+        try:
+            cutout = make_cutout(bgr, box)
+        except FaceError:
+            if i == 0:
+                raise
+            continue
+        if not cv2.imwrite(str(path), cutout):
+            raise FaceError("Couldn't save the cutout.")
+        paths.append(path)
+    return paths

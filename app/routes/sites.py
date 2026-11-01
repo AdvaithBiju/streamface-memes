@@ -126,10 +126,12 @@ def viewer_add_face():
     if count >= limit:
         return jsonify(error=f"You can keep up to {limit} faces. Delete one first."), 400
     source = request.form.get("source") if request.form.get("source") in ("webcam", "paste") else "upload"
-    rows, errors = setup.save_faces([f], source, owner)
+    # A screenshot with several people in it gives one face per person, up to the viewer's limit.
+    rows, errors = setup.save_faces([f], source, owner, faces_per_photo=limit - count)
     if not rows:
         return jsonify(error=errors[0]), 422
-    return jsonify(_viewer_face_json(rows[0])), 201
+    rows = sorted(rows, key=lambda r: r["id"])
+    return jsonify({**_viewer_face_json(rows[0]), "faces": [_viewer_face_json(r) for r in rows]}), 201
 
 
 @bp.delete("/api/viewer/faces/<int:face_id>")

@@ -34,22 +34,23 @@ def list_faces():
     return jsonify([_face_json(r) for r in rows])
 
 
-def save_faces(files, source: str, owner: str | None) -> tuple[list, list[str]]:
-    """Cut the face out of each photo and store it. Returns (new rows, error messages)."""
+def save_faces(files, source: str, owner: str | None, faces_per_photo: int = 1) -> tuple[list, list[str]]:
+    """Cut the face(s) out of each photo and store them. Returns (new rows, error messages)."""
     db = get_db()
     detector = current_app.extensions["face_detector"]
     created, errors = [], []
     for f in files:
-        filename = f"{uuid.uuid4().hex}.png"
         try:
-            process_photo(detector, f.read(), current_app.config["FACES_DIR"] / filename)
-            storage.save(current_app.config["FACES_DIR"] / filename)
+            paths = process_photo(detector, f.read(),
+                                  current_app.config["FACES_DIR"] / f"{uuid.uuid4().hex}.png", faces_per_photo)
         except FaceError as exc:
             errors.append(f"{f.filename}: {exc}" if len(files) > 1 else str(exc))
             continue
-        cur = db.execute("INSERT INTO faces (filename, source, owner) VALUES (?, ?, ?)",
-                         (filename, source, owner))
-        created.append(cur.lastrowid)
+        for path in paths:
+            storage.save(path)
+            cur = db.execute("INSERT INTO faces (filename, source, owner) VALUES (?, ?, ?)",
+                             (path.name, source, owner))
+            created.append(cur.lastrowid)
     db.commit()
     rows = db.execute(
         f"SELECT * FROM faces WHERE id IN ({','.join('?' * len(created))})", created

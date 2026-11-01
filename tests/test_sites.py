@@ -83,10 +83,14 @@ def test_viewer_makes_a_meme_on_the_site(client, app):
 def test_viewer_face_screenshots(client, app, monkeypatch):
     from app.routes import setup as setup_routes
 
-    def fake_cutout(detector, data, out_path):
+    def fake_cutout(detector, data, out_path, max_faces=1):
         if data == b"no face here":
             raise setup_routes.FaceError("No face found. Try a well-lit, front-facing photo.")
-        out_path.write_bytes((app.config["FACES_DIR"] / "face.png").read_bytes())
+        people = 3 if data == b"group shot" else 1
+        paths = [out_path] + [out_path.with_name(f"{out_path.stem}-{i}.png") for i in range(2, people + 1)]
+        for path in paths[:max_faces]:
+            path.write_bytes((app.config["FACES_DIR"] / "face.png").read_bytes())
+        return paths[:max_faces]
     monkeypatch.setattr(setup_routes, "process_photo", fake_cutout)
     app.config["VIEWER_MAX_FACES"] = 2
 
@@ -115,6 +119,20 @@ def test_viewer_face_screenshots(client, app, monkeypatch):
     assert client.post("/api/viewer/memes", headers=alice, json=used).status_code == 201
     assert client.delete(f"/api/viewer/faces/{face_id}", headers=alice).json == {"ok": True}
     assert len(client.get("/api/viewer/faces", headers=alice).json) == 2
+
+    # A group screenshot gives one face per person, but only up to the viewer's limit.
+    app.config["VIEWER_MAX_FACES"] = 5
+    carol = token(app, "carol", "viewer")
+    group = upload(carol, b"group shot").json
+    ids = [f["id"] for f in group["faces"]]
+    assert len(ids) == 3 and group["id"] == ids[0]
+    assert len(upload(carol, b"group shot").json["faces"]) == 2   # 3 + 2 = the limit of 5
+
+    # Several faces in one meme: the streamer's and two of Carol's.
+    many = meme("testmeme", FACE, {**FACE, "face_id": ids[0], "x": 10}, {**FACE, "face_id": ids[1], "x": 300},
+                text("squad"))
+    made = client.post("/api/viewer/memes", headers=carol, json=many)
+    assert made.status_code == 201, made.json
 
 
 def test_only_mods_can_moderate(client, online):

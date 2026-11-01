@@ -29,7 +29,7 @@ Built for the **Codex x TwitchCon Hackathon**.
 
 | Site | What it does |
 |---|---|
-| **Viewers' site** (`web/user`) | Viewers sign in with Twitch and get the same drag-and-drop editor as `/editor`: built-in or top-100 Imgflip templates, the streamer's face or a face screenshot they add (upload, paste with Ctrl+V, or webcam; the face is cut out automatically), and text they can move, resize and rotate. The meme goes to the mods for approval, and viewers can see whether each one was approved. |
+| **Viewers' site** (`web/user`) | Viewers sign in with Twitch and get the same drag-and-drop editor as `/editor`: built-in or top-100 Imgflip templates, the streamer's face or a face screenshot they add (upload, paste with Ctrl+V, or webcam; every face in it is cut out automatically, so group shots give one face each), , as many faces as they like in one meme, and text they can move, resize and rotate. The meme goes to the mods for approval, and viewers can see whether each one was approved. |
 | **Mods' site** (`web/mod`) | The streamer and their Twitch mods sign in to approve or reject memes and run Meme of the Stream from any device. Other accounts are refused. |
 
 ---

@@ -316,13 +316,22 @@ function layersFromTemplate(t) {
   return layers;
 }
 
+// Each extra face goes to the next free spot, so faces don't land on top of each other.
+const FACE_SPOTS = [[0.5, 0.5], [0.25, 0.5], [0.75, 0.5], [0.5, 0.25], [0.25, 0.25], [0.75, 0.25],
+  [0.5, 0.75], [0.25, 0.75], [0.75, 0.75]];
+
 function addFace(faceId) {
   if (!state.template) return setStatus("Pick a meme first.", "warn");
   const img = faceImgs.get(faceId);
   const w = Math.round(Math.min(canvas.width, canvas.height) * 0.3);
   const h = Math.round(img ? (w * img.naturalHeight) / img.naturalWidth : w * 1.25);
+  const taken = state.layers.filter((l) => l.type === "face").map(center);
+  const spot = FACE_SPOTS.find(([fx, fy]) => !taken.some((c) =>
+    Math.abs(c.x - fx * canvas.width) < w / 2 && Math.abs(c.y - fy * canvas.height) < h / 2)) || FACE_SPOTS[0];
+  const clamp = (v, max) => Math.max(0, Math.min(Math.round(v), max));
   state.layers.push(faceLayer(faceId, {
-    x: Math.round((canvas.width - w) / 2), y: Math.round((canvas.height - h) / 2), width: w, height: h,
+    x: clamp(spot[0] * canvas.width - w / 2, canvas.width - w),
+    y: clamp(spot[1] * canvas.height - h / 2, canvas.height - h), width: w, height: h,
   }));
   select(state.layers.length - 1);
 }
@@ -743,13 +752,17 @@ async function uploadFace(blob, source) {
   fd.append("photo", blob, blob.name || "screenshot.png");
   fd.append("source", source);
   try {
-    const face = await api("/api/viewer/faces", { method: "POST", body: fd });
+    const res = await api("/api/viewer/faces", { method: "POST", body: fd });
+    const added = res.faces || [res];
+    const many = added.length > 1;
     await loadFaces();
     if (state.template) {
-      addFace(face.id);
-      setStatus("Face cut out and added to your meme. Drag it into place.", "ok", "face-status");
+      added.forEach((f) => addFace(f.id));
+      setStatus(many ? `Found ${added.length} faces! They're on your meme now. Drag them into place.`
+        : "Face cut out and added to your meme. Drag it into place.", "ok", "face-status");
     } else {
-      setStatus("Face cut out! Now pick a meme below. It goes into the meme's face spots.", "ok", "face-status");
+      setStatus(many ? `Found ${added.length} faces! Pick a meme below, then tap faces to add as many as you like.`
+        : "Face cut out! Now pick a meme below. It goes into the meme's face spots.", "ok", "face-status");
     }
   } catch (err) {
     setStatus(err.message, "error", "face-status");
