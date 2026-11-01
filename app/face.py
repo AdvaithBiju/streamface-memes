@@ -20,6 +20,9 @@ MODEL_URL = (
     "https://storage.googleapis.com/mediapipe-models/face_detector/"
     "blaze_face_short_range/float16/1/blaze_face_short_range.tflite"
 )
+# Backup detector. OpenCV 5 no longer ships its Haar cascade files, so fetch it like the model above.
+HAAR_URL = ("https://raw.githubusercontent.com/opencv/opencv/4.x/data/haarcascades/"
+            "haarcascade_frontalface_default.xml")
 MAX_CUTOUT_SIZE = 512  # longest side of the saved PNG
 
 
@@ -60,12 +63,24 @@ class FaceDetector:
             self._mp_detector = vision.FaceDetector.create_from_options(options)
             self._mp = mp
             self.backend = "mediapipe"
-        except Exception as exc:  # missing wheel, offline, etc.
+        except Exception as exc:  # missing wheel or system library, offline, etc.
             log.warning("MediaPipe unavailable (%s); using OpenCV Haar cascade", exc)
-            self._haar = cv2.CascadeClassifier(
-                cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-            )
-            self.backend = "opencv-haar"
+            self._init_haar()
+
+    def _init_haar(self) -> None:
+        path = self.model_path.parent / "haarcascade_frontalface_default.xml"
+        try:
+            if not path.exists():
+                path.parent.mkdir(parents=True, exist_ok=True)
+                urllib.request.urlretrieve(HAAR_URL, path)
+            haar = cv2.CascadeClassifier(str(path))
+            if haar.empty():
+                raise ValueError(f"couldn't load {path}")
+        except Exception as exc:
+            log.error("No face detector available: %s", exc)
+            return
+        self._haar = haar
+        self.backend = "opencv-haar"
 
     def detect(self, bgr: np.ndarray) -> Box | None:
         """Return the largest face in the image, or None."""
@@ -78,11 +93,13 @@ class FaceDetector:
                     d.bounding_box.width, d.bounding_box.height)
                 for d in result.detections
             ]
-        else:
+        elif self._haar is not None:
             gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
             found = self._haar.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5,
                                                 minSize=(60, 60))
             boxes = [Box(int(x), int(y), int(w), int(h)) for x, y, w, h in found]
+        else:
+            raise FaceError("Face detection isn't working on the server right now. Please tell the streamer.")
 
         if not boxes:
             return None
