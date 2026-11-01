@@ -96,7 +96,9 @@ def voting_action(action: str):
         actions[action]()
     except pipeline.RequestRefused as exc:
         return _refused(exc)
-    return jsonify(voting.state())
+    # Lets the mod page warn that chat messages aren't going anywhere.
+    twitch = current_app.extensions.get("twitch")
+    return jsonify({**voting.state(), "chat_connected": bool(twitch and twitch.account("broadcaster"))})
 
 
 # ------------------------------------------------------------------ overlay API

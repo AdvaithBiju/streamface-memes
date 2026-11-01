@@ -115,7 +115,9 @@ def show_choices() -> None:
     round_row = current_round()
     if round_row is None:
         raise RequestRefused("Voting isn't open.")
-    _emit_choices(candidates(round_row))
+    memes = candidates(round_row)
+    _emit_choices(memes)
+    say(choices_message(memes).replace("voting is open!", "voting is still open!"))
 
 
 def vote(user: str, meme_ref: str) -> None:

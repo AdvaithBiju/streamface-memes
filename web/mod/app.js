@@ -228,7 +228,10 @@ function renderVoting(v) {
 async function votingAction(action, okMsg) {
   try {
     const v = await api(`/api/voting/${action}`, { method: "POST", body: "{}" });
-    setStatus(okMsg, "ok");
+    setStatus(v.chat_connected === false && action !== "show"
+      ? `Shown on stream, but NOT in Twitch chat: the bot isn't connected. `
+        + `The streamer needs to click Connect at ${API}/twitch.`
+      : okMsg, v.chat_connected === false && action !== "show" ? "error" : "ok");
     lastVoting = JSON.stringify(v);
     renderVoting(v);
   } catch (err) {
@@ -238,7 +241,7 @@ async function votingAction(action, okMsg) {
 
 $("vote-open").onclick = () => votingAction("open", "Voting is open! The choices are on stream and in chat.");
 $("vote-show").onclick = () => votingAction("show", "Leaderboard sent to the overlay.");
-$("vote-choices").onclick = () => votingAction("choices", "Choices sent to the overlay.");
+$("vote-choices").onclick = () => votingAction("choices", "Choices sent to the overlay and chat.");
 $("vote-close").onclick = () => {
   if (confirm("Close voting and show the winner on stream?")) votingAction("close", "Winner crowned!");
 };

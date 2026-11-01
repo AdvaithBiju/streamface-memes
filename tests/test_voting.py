@@ -49,8 +49,11 @@ def test_full_voting_round(client, sio):
     assert [(m["id"], m["votes"]) for m in state["candidates"]] == [(a, 0), (b, 3)]
     assert state["total_votes"] == 3
 
-    assert client.post("/api/voting/choices").status_code == 200
-    assert any(e["name"] == "show_choices" for e in sio.get_received())
+    res = client.post("/api/voting/choices")
+    assert res.status_code == 200 and res.json["chat_connected"] is False   # tests have no Twitch login
+    events = sio.get_received()
+    assert any(e["name"] == "show_choices" for e in events)
+    assert any(e["name"] == "bot_message" and f"!vote {b} (bob)" in e["args"][0]["text"] for e in events)
 
     assert client.post("/api/voting/show").status_code == 200
     assert any(e["name"] == "show_leaderboard" for e in sio.get_received())
